@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
-import { useLogin, useLogout, setAuthTokenGetter, User } from "@workspace/api-client-react";
+import { useLogin, useLogout, User } from "@workspace/api-client-react";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -21,12 +21,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return localStorage.getItem("nexus_token");
   });
   const [isLoading, setIsLoading] = useState(false);
-
-  // Wire the token getter so every API call includes the Bearer header
-  React.useEffect(() => {
-    setAuthTokenGetter(() => localStorage.getItem("nexus_token"));
-    return () => setAuthTokenGetter(null);
-  }, []);
 
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
