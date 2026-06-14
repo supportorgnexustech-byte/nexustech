@@ -3,11 +3,12 @@ import { fallbackLLM } from "../lib/llm-fallback";
 
 const router = Router();
 
-router.post("/tasks/generate", async (req, res) => {
+router.post("/tasks/generate", async (req, res): Promise<void> => {
   const { featureTitle, projectDescription } = req.body;
 
   if (!featureTitle || !projectDescription) {
-    return res.status(400).json({ error: "Missing featureTitle or projectDescription" });
+    res.status(400).json({ error: "Missing featureTitle or projectDescription" });
+    return;
   }
 
   const prompt = `You are a technical project manager for Nexus Tech Solutions.
