@@ -9,10 +9,21 @@ async function main() {
   await new Promise(resolve => setTimeout(resolve, 1000));
   console.log("MongoDB initialization called.");
 
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!redisUrl || !redisToken) {
+    console.warn("[Notification Server] UPSTASH_REDIS_REST_URL or TOKEN not set. Waiting for configuration...");
+    // Keep the process alive but do nothing — prevents crash in parallel mode
+    while (true) {
+      await new Promise(resolve => setTimeout(resolve, 30000));
+    }
+  }
+
   // Connect to Redis using Upstash REST
   const upstashRedis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: redisUrl,
+    token: redisToken,
   });
 
   console.log(`Connected to Upstash Redis. Listening for contact notifications via polling...`);
@@ -54,3 +65,4 @@ main().catch(err => {
   console.error("Fatal error in notification-server:", err);
   process.exit(1);
 });
+

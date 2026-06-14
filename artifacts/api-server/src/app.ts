@@ -41,7 +41,8 @@ if (process.env.NODE_ENV === "production") {
   const publicPath = path.resolve(__dirname, "../../portal/dist/public");
   app.use(express.static(publicPath));
 
-  app.get("*", (req, res) => {
+  // Express 5 requires named wildcard parameters
+  app.get("/{*splat}", (req, res) => {
     res.sendFile(path.resolve(publicPath, "index.html"));
   });
 } else {
