@@ -2,10 +2,11 @@
   "name": "@workspace/notification-server",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development tsx watch --env-file=../../.env src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "node ./build.mjs",
+    "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -18,6 +19,8 @@
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
+    "esbuild": "0.27.3",
+    "esbuild-plugin-pino": "^2.3.3",
     "tsx": "^4.19.2",
     "typescript": "~5.9.3"
   }
