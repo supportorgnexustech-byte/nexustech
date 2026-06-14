@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useListTasks, useListProjects, useUpdateTask, Task } from "@workspace/api-client-react";
-import { Loader2, Plus, Tag } from "lucide-react";
+import { Loader2, Plus, Tag, Columns } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,12 +21,13 @@ const PRIORITY_BADGE: Record<string, string> = {
 };
 
 export default function Kanban() {
-  const { data: tasks, isLoading, refetch } = useListTasks();
+  const queryClient = useQueryClient();
+  const { data: tasks, isLoading, refetch } = useListTasks(undefined, { query: { queryKey: ["tasks"] } });
   const { data: projects } = useListProjects();
   const updateTask = useUpdateTask();
   const { toast } = useToast();
   const [dragging, setDragging] = useState<Task | null>(null);
-  const [filterProject, setFilterProject] = useState<number | null>(null);
+  const [filterProject, setFilterProject] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -45,12 +47,24 @@ export default function Kanban() {
   const handleDrop = async (e: React.DragEvent, status: string) => {
     e.preventDefault();
     if (!dragging || dragging.status === status) { setDragging(null); return; }
+    
+    // Optimistic Update
+    queryClient.setQueryData(["tasks"], (oldTasks: any) => {
+      if (!oldTasks) return oldTasks;
+      return oldTasks.map((t: any) => t.id === dragging.id ? { ...t, status } : t);
+    });
+
     try {
-      await updateTask.mutateAsync({ id: dragging.id, data: { status: status as any } });
-      toast({ title: "Task moved", description: `"${dragging.title}" → ${status.replace("_", " ")}` });
-      refetch();
-    } catch {
+      updateTask.mutateAsync({ id: dragging.id, data: { status: status as any } }).then(() => {
+        toast({ title: "Task moved", description: `"${dragging.title}" → ${status.replace("_", " ")}` });
+        refetch();
+      }).catch(() => {
+        toast({ title: "Failed to move task", variant: "destructive" });
+        refetch();
+      });
+    } catch (err) {
       toast({ title: "Failed to move task", variant: "destructive" });
+      refetch();
     }
     setDragging(null);
   };
@@ -59,13 +73,16 @@ export default function Kanban() {
     <div className="space-y-4 fade-in h-full flex flex-col">
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Kanban Board</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Columns className="w-8 h-8 text-primary" />
+            Kanban Board
+          </h1>
           <p className="text-muted-foreground mt-1">Drag tasks between columns to update their status.</p>
         </div>
         <select
           className="bg-card border border-white/10 rounded-md text-sm text-foreground px-3 py-2 outline-none"
           value={filterProject ?? ""}
-          onChange={e => setFilterProject(e.target.value ? Number(e.target.value) : null)}
+          onChange={e => setFilterProject(e.target.value ? e.target.value : null)}
         >
           <option value="">All Projects</option>
           {projects?.map(p => (

@@ -1,92 +1,120 @@
 import { Router, type IRouter } from "express";
-import { EstimatePriceBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { ClientModel, ProjectModel, InvoiceModel } from "@workspace/db";
 
 const router: IRouter = Router();
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
-
 router.post("/pricing/estimate", requireAuth, async (req, res): Promise<void> => {
-  const parsed = EstimatePriceBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  if (!GEMINI_API_KEY) {
-    res.status(500).json({ error: "AI pricing service not configured" });
-    return;
-  }
-
-  const { description, clientType, timeline } = parsed.data;
-
-  const prompt = `You are a senior software consultant at Nexus Tech Solutions, a tech company based in India. 
-A client has described their project. Break it down into features and provide an itemized price estimate in INR (Indian Rupees).
-
-Project Description: "${description}"
-${clientType ? `Client Type: ${clientType}` : ""}
-${timeline ? `Expected Timeline: ${timeline}` : ""}
-
-Respond ONLY with valid JSON in this exact format (no markdown, no explanation):
-{
-  "summary": "Brief 1-2 sentence summary of the project",
-  "projectType": "Web App / Mobile App / API / SaaS / E-commerce / etc.",
-  "complexity": "low | medium | high | enterprise",
-  "features": [
-    {
-      "name": "Feature name",
-      "description": "What this feature entails",
-      "complexity": "low | medium | high",
-      "minPrice": 15000,
-      "maxPrice": 25000,
-      "estimatedDays": 3
-    }
-  ],
-  "totalEstimate": 150000,
-  "minEstimate": 120000,
-  "maxEstimate": 200000,
-  "estimatedWeeks": 8,
-  "currency": "INR"
-}
-
-Pricing guidelines (INR):
-- Simple feature (form, list, basic CRUD): 8,000 - 20,000
-- Medium feature (auth, dashboard, search): 25,000 - 60,000
-- Complex feature (payment, real-time, AI): 60,000 - 1,50,000
-- Enterprise feature (scalability, compliance): 1,50,000 - 5,00,000
-
-Be realistic and helpful. Break into 4-8 distinct features.`;
-
   try {
-    const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+    const aiServerUrl = process.env.AI_SERVER_URL || "http://localhost:5050";
+    const response = await fetch(`${aiServerUrl}/api/pricing/estimate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
-      }),
+      body: JSON.stringify(req.body),
     });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    logger.error({ err }, "Failed to proxy pricing request to ai-server");
+    res.status(502).json({ error: "AI service temporarily unavailable." });
+  }
+});
 
-    if (!response.ok) {
-      const errText = await response.text();
-      logger.error({ status: response.status, errText }, "Gemini API error");
-      res.status(502).json({ error: "AI service temporarily unavailable" });
+router.post("/pricing/agreement", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const aiServerUrl = process.env.AI_SERVER_URL || "http://localhost:5050";
+    const response = await fetch(`${aiServerUrl}/api/pricing/agreement`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (err) {
+    logger.error({ err }, "Failed to proxy agreement request to ai-server");
+    res.status(502).json({ error: "AI service temporarily unavailable." });
+  }
+});
+
+router.post("/pricing/sign", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const { clientName, clientEmail, companyName, finalPrice, agreementHtml, selectedPlan, projectDescription, featuresList } = req.body;
+
+    if (!clientName || !clientEmail || !companyName || !finalPrice) {
+      res.status(400).json({ error: "Missing required fields" });
       return;
     }
 
-    const data = await response.json() as any;
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    // 1. Create or Find Client
+    let client = await ClientModel.findOne({ contactEmail: clientEmail });
+    if (!client) {
+      client = await ClientModel.create({
+        companyName,
+        businessType: "Software Development",
+        contactName: clientName,
+        contactEmail: clientEmail,
+        status: "active",
+      });
+    }
 
-    // Strip markdown code fences if present
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const estimate = JSON.parse(cleaned);
+    // 2. Create Project
+    const project = await ProjectModel.create({
+      name: `${companyName} - ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan`,
+      description: projectDescription || `Software development project based on ${selectedPlan} plan.`,
+      clientId: client._id.toString(),
+      status: "planning",
+      priority: "high",
+      startDate: new Date().toISOString(),
+      budget: finalPrice,
+      featuresList: featuresList || [],
+    });
 
-    res.json({ ...estimate, generatedAt: new Date().toISOString() });
+    // 3. Create Invoice for the 50% Advance
+    const advanceAmount = Math.round(finalPrice * 0.5);
+    const invoiceNumber = `INV-${Date.now().toString().slice(-6)}`;
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 7); // Due in 7 days
+
+    const remainingAmount = finalPrice - advanceAmount;
+
+    const invoice = await InvoiceModel.create({
+      invoiceNumber,
+      clientId: client._id.toString(),
+      projectId: project._id.toString(),
+      status: "draft",
+      subtotal: finalPrice,
+      tax: 0,
+      total: finalPrice,
+      dueDate: dueDate.toISOString(),
+      notes: "Software Development Agreement. 50% Advance, 50% on Completion.",
+      items: [
+        {
+          id: Math.random().toString(36).substring(7),
+          description: `Advance Payment (50%) - ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)} Plan`,
+          quantity: 1,
+          rate: advanceAmount,
+          amount: advanceAmount,
+        },
+        {
+          id: Math.random().toString(36).substring(7),
+          description: `Completion Payment (50%) - Due upon delivery`,
+          quantity: 1,
+          rate: remainingAmount,
+          amount: remainingAmount,
+        }
+      ]
+    });
+
+    res.json({
+      success: true,
+      clientId: client._id.toString(),
+      projectId: project._id.toString(),
+      invoiceId: invoice._id.toString(),
+    });
   } catch (err) {
-    logger.error({ err }, "Failed to generate pricing estimate");
-    res.status(500).json({ error: "Failed to generate estimate. Please try again." });
+    logger.error({ err }, "Failed to sign agreement and create records");
+    res.status(500).json({ error: "Failed to process signed agreement." });
   }
 });
 

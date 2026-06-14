@@ -9,15 +9,17 @@ import type { TaskPriority } from './taskPriority';
 import type { TaskStatus } from './taskStatus';
 
 export interface Task {
-  id: number;
+  id: string;
   title: string;
   /** @nullable */
   description?: string | null;
-  projectId: number;
+  projectId: string;
+  /** @nullable */
+  featureId?: string | null;
   /** @nullable */
   projectName?: string | null;
   /** @nullable */
-  assigneeId?: number | null;
+  assigneeId?: string | null;
   /** @nullable */
   assigneeName?: string | null;
   status: TaskStatus;

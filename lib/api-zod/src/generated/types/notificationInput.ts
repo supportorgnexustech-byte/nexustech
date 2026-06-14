@@ -9,11 +9,11 @@ import type { NotificationInputChannel } from './notificationInputChannel';
 import type { NotificationInputType } from './notificationInputType';
 
 export interface NotificationInput {
-  userId: number;
+  userId: string;
   type: NotificationInputType;
   channel: NotificationInputChannel;
   title: string;
   message: string;
   /** @nullable */
-  entityId?: number | null;
+  entityId?: string | null;
 }

@@ -24,12 +24,12 @@ export const UserRole = {
 } as const;
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: UserRole;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
   /** @nullable */
   phone?: string | null;
   createdAt: string;
@@ -55,7 +55,7 @@ export interface UserInput {
   password: string;
   role: UserInputRole;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
   /** @nullable */
   phone?: string | null;
 }
@@ -76,7 +76,7 @@ export interface UserPatch {
   /** @nullable */
   phone?: string | null;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
 }
 
 export type ClientStatus = typeof ClientStatus[keyof typeof ClientStatus];
@@ -89,7 +89,7 @@ export const ClientStatus = {
 } as const;
 
 export interface Client {
-  id: number;
+  id: string;
   companyName: string;
   businessType: string;
   contactName: string;
@@ -174,12 +174,18 @@ export const ProjectPriority = {
   critical: 'critical',
 } as const;
 
+export interface ProjectFeatureItem {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Project {
-  id: number;
+  id: string;
   name: string;
   /** @nullable */
   description?: string | null;
-  clientId: number;
+  clientId: string;
   /** @nullable */
   clientName?: string | null;
   status: ProjectStatus;
@@ -192,7 +198,10 @@ export interface Project {
   /** @nullable */
   spent?: number | null;
   progress?: number;
-  assignedDevIds?: number[];
+  assignedDevIds?: string[];
+  /** @nullable */
+  githubRepoUrl?: string | null;
+  featuresList?: ProjectFeatureItem[];
   createdAt: string;
 }
 
@@ -221,7 +230,7 @@ export interface ProjectInput {
   name: string;
   /** @nullable */
   description?: string | null;
-  clientId: number;
+  clientId: string;
   status: ProjectInputStatus;
   priority: ProjectInputPriority;
   startDate: string;
@@ -229,7 +238,7 @@ export interface ProjectInput {
   endDate?: string | null;
   /** @nullable */
   budget?: number | null;
-  assignedDevIds?: number[];
+  assignedDevIds?: string[];
 }
 
 export type ProjectPatchStatus = typeof ProjectPatchStatus[keyof typeof ProjectPatchStatus];
@@ -266,12 +275,15 @@ export interface ProjectPatch {
   /** @nullable */
   spent?: number | null;
   progress?: number;
-  assignedDevIds?: number[];
+  assignedDevIds?: string[];
+  /** @nullable */
+  githubRepoUrl?: string | null;
+  featuresList?: ProjectFeatureItem[];
 }
 
 export interface Milestone {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   title: string;
   /** @nullable */
   description?: string | null;
@@ -303,15 +315,17 @@ export const TaskPriority = {
 } as const;
 
 export interface Task {
-  id: number;
+  id: string;
   title: string;
   /** @nullable */
   description?: string | null;
-  projectId: number;
+  projectId: string;
+  /** @nullable */
+  featureId?: string | null;
   /** @nullable */
   projectName?: string | null;
   /** @nullable */
-  assigneeId?: number | null;
+  assigneeId?: string | null;
   /** @nullable */
   assigneeName?: string | null;
   status: TaskStatus;
@@ -324,6 +338,13 @@ export interface Task {
   loggedHours?: number | null;
   tags?: string[];
   createdAt: string;
+}
+
+export interface GenerateTasksRequest {
+  projectId: string;
+  featureId: string;
+  featureTitle: string;
+  projectDescription: string;
 }
 
 export type TaskInputStatus = typeof TaskInputStatus[keyof typeof TaskInputStatus];
@@ -351,9 +372,11 @@ export interface TaskInput {
   title: string;
   /** @nullable */
   description?: string | null;
-  projectId: number;
+  projectId: string;
   /** @nullable */
-  assigneeId?: number | null;
+  featureId?: string | null;
+  /** @nullable */
+  assigneeId?: string | null;
   status: TaskInputStatus;
   priority: TaskInputPriority;
   /** @nullable */
@@ -389,7 +412,9 @@ export interface TaskPatch {
   /** @nullable */
   description?: string | null;
   /** @nullable */
-  assigneeId?: number | null;
+  featureId?: string | null;
+  /** @nullable */
+  assigneeId?: string | null;
   status?: TaskPatchStatus;
   priority?: TaskPatchPriority;
   /** @nullable */
@@ -413,12 +438,12 @@ export const ResourceType = {
 } as const;
 
 export interface Resource {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   /** @nullable */
   projectName?: string | null;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
   type: ResourceType;
   /** @nullable */
   description?: string | null;
@@ -442,7 +467,7 @@ export const ResourceInputType = {
 } as const;
 
 export interface ResourceInput {
-  projectId: number;
+  projectId: string;
   type: ResourceInputType;
   /** @nullable */
   description?: string | null;
@@ -464,6 +489,7 @@ export const ResourcePatchType = {
 } as const;
 
 export interface ResourcePatch {
+  projectId?: string;
   type?: ResourcePatchType;
   /** @nullable */
   description?: string | null;
@@ -474,7 +500,7 @@ export interface ResourcePatch {
 }
 
 export interface ProjectResourceSummary {
-  projectId: number;
+  projectId: string;
   projectName: string;
   devHours: number;
   hostingCost: number;
@@ -508,14 +534,29 @@ export interface InvoiceLineItem {
   amount: number;
 }
 
+export type AdvancePaymentMethod = typeof AdvancePaymentMethod[keyof typeof AdvancePaymentMethod];
+
+
+export const AdvancePaymentMethod = {
+  cash: 'cash',
+  upi: 'upi',
+} as const;
+
+export interface AdvancePayment {
+  amount: number;
+  method: AdvancePaymentMethod;
+  date: string;
+  receiptNumber: string;
+}
+
 export interface Invoice {
-  id: number;
+  id: string;
   invoiceNumber: string;
-  clientId: number;
+  clientId: string;
   /** @nullable */
   clientName?: string | null;
   /** @nullable */
-  projectId?: number | null;
+  projectId?: string | null;
   /** @nullable */
   projectName?: string | null;
   status: InvoiceStatus;
@@ -523,6 +564,9 @@ export interface Invoice {
   subtotal: number;
   tax: number;
   total: number;
+  amountPaid?: number;
+  amountPending?: number;
+  advancePayments?: AdvancePayment[];
   /** @nullable */
   notes?: string | null;
   dueDate: string;
@@ -543,9 +587,9 @@ export const InvoiceInputStatus = {
 } as const;
 
 export interface InvoiceInput {
-  clientId: number;
+  clientId: string;
   /** @nullable */
-  projectId?: number | null;
+  projectId?: string | null;
   items: InvoiceLineItem[];
   tax?: number;
   /** @nullable */
@@ -573,6 +617,28 @@ export interface InvoicePatch {
   dueDate?: string;
   /** @nullable */
   paidAt?: string | null;
+}
+
+export type RecordPaymentMethod = typeof RecordPaymentMethod[keyof typeof RecordPaymentMethod];
+
+
+export const RecordPaymentMethod = {
+  cash: 'cash',
+  upi: 'upi',
+} as const;
+
+export interface RecordPayment {
+  amount: number;
+  method: RecordPaymentMethod;
+  date: string;
+}
+
+export interface SubmitContact {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  message: string;
 }
 
 export interface PricingRequest {
@@ -624,6 +690,44 @@ export interface PricingEstimate {
   generatedAt: string;
 }
 
+export interface AgreementRequest {
+  clientName: string;
+  clientEmail: string;
+  companyName: string;
+  /** @nullable */
+  clientAddress?: string | null;
+  selectedPlan: string;
+  finalPrice: number;
+  estimate: PricingEstimate;
+}
+
+export interface AgreementResponse {
+  serviceAgreement: string;
+  featureSpec: string;
+  userStories: string;
+  commercialProposal: string;
+  generatedAt: string;
+}
+
+export interface SignAgreementRequest {
+  clientName: string;
+  clientEmail: string;
+  companyName: string;
+  finalPrice: number;
+  agreementHtml: string;
+  selectedPlan: string;
+  /** @nullable */
+  projectDescription?: string | null;
+  featuresList?: ProjectFeatureItem[];
+}
+
+export interface SignedAgreementResult {
+  success?: boolean;
+  clientId?: string;
+  projectId?: string;
+  invoiceId?: string;
+}
+
 export interface InvoiceStats {
   paid: number;
   pending: number;
@@ -632,12 +736,12 @@ export interface InvoiceStats {
 }
 
 export interface ActivityItem {
-  id: number;
+  id: string;
   type: string;
   message: string;
   timestamp: string;
   /** @nullable */
-  entityId?: number | null;
+  entityId?: string | null;
 }
 
 export interface ResourceBreakdownItem {
@@ -683,15 +787,15 @@ export const NotificationChannel = {
 } as const;
 
 export interface Notification {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   type: NotificationType;
   channel: NotificationChannel;
   title: string;
   message: string;
   read: boolean;
   /** @nullable */
-  entityId?: number | null;
+  entityId?: string | null;
   createdAt: string;
 }
 
@@ -715,33 +819,37 @@ export const NotificationInputChannel = {
 } as const;
 
 export interface NotificationInput {
-  userId: number;
+  userId: string;
   type: NotificationInputType;
   channel: NotificationInputChannel;
   title: string;
   message: string;
   /** @nullable */
-  entityId?: number | null;
+  entityId?: string | null;
 }
 
+export type SubmitContact200 = {
+  success?: boolean;
+};
+
 export type ListProjectsParams = {
-clientId?: number;
+clientId?: string;
 status?: string;
 };
 
 export type ListTasksParams = {
-projectId?: number;
-assigneeId?: number;
+projectId?: string;
+assigneeId?: string;
 status?: string;
 };
 
 export type ListResourcesParams = {
-projectId?: number;
-clientId?: number;
+projectId?: string;
+clientId?: string;
 };
 
 export type ListInvoicesParams = {
-clientId?: number;
+clientId?: string;
 status?: string;
 };
 

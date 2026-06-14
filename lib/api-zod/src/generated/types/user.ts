@@ -8,12 +8,12 @@
 import type { UserRole } from './userRole';
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: UserRole;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
   /** @nullable */
   phone?: string | null;
   createdAt: string;

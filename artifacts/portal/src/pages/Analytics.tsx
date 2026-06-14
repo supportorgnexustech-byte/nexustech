@@ -1,7 +1,7 @@
 import React from "react";
 import { useGetDashboardAnalytics, useGetRevenueAnalytics } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, TrendingUp, IndianRupee, Users, Briefcase } from "lucide-react";
+import { Loader2, TrendingUp, IndianRupee, Users, Briefcase, BarChart3 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell, BarChart, Bar, LabelList,
@@ -45,7 +45,10 @@ export default function Analytics() {
   return (
     <div className="space-y-6 fade-in">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+          <BarChart3 className="w-8 h-8 text-primary" />
+          Analytics
+        </h1>
         <p className="text-muted-foreground mt-1">Business performance and financial metrics.</p>
       </div>
 
@@ -83,8 +86,9 @@ export default function Analytics() {
                 <YAxis tickFormatter={(v) => fmt(v)} tick={{ fill: "#94a3b8", fontSize: 11 }} width={60} />
                 <Tooltip
                   contentStyle={{ background: "#0f172a", border: "1px solid #ffffff20", borderRadius: 8 }}
-                  labelStyle={{ color: "#e2e8f0" }}
-                  formatter={(v: number) => [fmt(v), ""]}
+                  itemStyle={{ color: "#e2e8f0" }}
+                  labelStyle={{ color: "#e2e8f0", marginBottom: "4px" }}
+                  formatter={(v: number, name: string) => [fmt(v), name === "revenue" ? "Revenue" : "Expenses"]}
                 />
                 <Legend />
                 <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} name="Revenue" />
@@ -110,7 +114,8 @@ export default function Analytics() {
                   </Pie>
                   <Tooltip
                     contentStyle={{ background: "#0f172a", border: "1px solid #ffffff20", borderRadius: 8 }}
-                    formatter={(v: number) => [fmt(v), ""]}
+                    itemStyle={{ color: "#e2e8f0" }}
+                    formatter={(v: number) => [fmt(v), "Total Cost"]}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -142,6 +147,8 @@ export default function Analytics() {
                 <YAxis tickFormatter={(v) => fmt(v)} tick={{ fill: "#94a3b8", fontSize: 11 }} width={60} />
                 <Tooltip
                   contentStyle={{ background: "#0f172a", border: "1px solid #ffffff20", borderRadius: 8 }}
+                  itemStyle={{ color: "#e2e8f0" }}
+                  cursor={{ fill: "rgba(255,255,255,0.05)" }}
                   formatter={(v: number) => [fmt(v), "Amount"]}
                 />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>

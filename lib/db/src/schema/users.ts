@@ -1,19 +1,25 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose from "mongoose";
+import { z } from "zod";
 
-export const usersTable = pgTable("users", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  role: text("role").notNull().default("client"),
-  clientId: integer("client_id"),
-  phone: text("phone"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+const UserSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  passwordHash: { type: String, required: true },
+  role: { type: String, default: "client" },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "Client" },
+  phone: { type: String },
+}, { timestamps: true });
+
+export const UserModel = mongoose.models.User || mongoose.model("User", UserSchema);
+
+export const insertUserSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  passwordHash: z.string(),
+  role: z.string().optional(),
+  clientId: z.string().optional(),
+  phone: z.string().optional(),
 });
 
-export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof usersTable.$inferSelect;
+export type UserType = mongoose.Document & InsertUser & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };

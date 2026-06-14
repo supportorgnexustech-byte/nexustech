@@ -9,14 +9,14 @@ import type { NotificationChannel } from './notificationChannel';
 import type { NotificationType } from './notificationType';
 
 export interface Notification {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   type: NotificationType;
   channel: NotificationChannel;
   title: string;
   message: string;
   read: boolean;
   /** @nullable */
-  entityId?: number | null;
+  entityId?: string | null;
   createdAt: string;
 }

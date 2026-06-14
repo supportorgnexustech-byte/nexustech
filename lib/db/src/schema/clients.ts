@@ -1,22 +1,34 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose from "mongoose";
+import { z } from "zod";
 
-export const clientsTable = pgTable("clients", {
-  id: serial("id").primaryKey(),
-  companyName: text("company_name").notNull(),
-  businessType: text("business_type").notNull(),
-  contactName: text("contact_name").notNull(),
-  contactEmail: text("contact_email").notNull(),
-  contactPhone: text("contact_phone"),
-  services: text("services").array().notNull().default([]),
-  status: text("status").notNull().default("onboarding"),
-  address: text("address"),
-  gstin: text("gstin"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+const ClientSchema = new mongoose.Schema({
+  companyName: { type: String, required: true },
+  businessType: { type: String, required: true },
+  contactName: { type: String, required: true },
+  contactEmail: { type: String, required: true },
+  contactPhone: { type: String },
+  services: { type: [String], default: [] },
+  status: { type: String, default: "onboarding" },
+  address: { type: String },
+  gstin: { type: String },
+}, { timestamps: true });
+
+ClientSchema.index({ status: 1 });
+ClientSchema.index({ companyName: 1 });
+
+export const ClientModel = mongoose.models.Client || mongoose.model("Client", ClientSchema);
+
+export const insertClientSchema = z.object({
+  companyName: z.string(),
+  businessType: z.string(),
+  contactName: z.string(),
+  contactEmail: z.string().email(),
+  contactPhone: z.string().optional(),
+  services: z.array(z.string()).optional(),
+  status: z.string().optional(),
+  address: z.string().optional(),
+  gstin: z.string().optional(),
 });
 
-export const insertClientSchema = createInsertSchema(clientsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertClient = z.infer<typeof insertClientSchema>;
-export type Client = typeof clientsTable.$inferSelect;
+export type ClientType = mongoose.Document & InsertClient & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };

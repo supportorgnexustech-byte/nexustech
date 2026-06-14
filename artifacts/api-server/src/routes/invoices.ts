@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, invoicesTable, clientsTable, projectsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { InvoiceModel, ClientModel, ProjectModel } from "@workspace/db";
 import {
   ListInvoicesQueryParams,
   CreateInvoiceBody,
@@ -8,6 +7,8 @@ import {
   UpdateInvoiceParams,
   UpdateInvoiceBody,
   DeleteInvoiceParams,
+  RecordInvoicePaymentParams,
+  RecordInvoicePaymentBody,
 } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 
@@ -25,34 +26,30 @@ function calcTotals(items: Array<{ description: string; quantity: number; rate: 
   return { subtotal, tax, total };
 }
 
-async function enrichInvoice(invoice: typeof invoicesTable.$inferSelect) {
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, invoice.clientId));
+async function enrichInvoice(invoice: any) {
+  const client = await ClientModel.findById(invoice.clientId).lean();
   let projectName: string | null = null;
   if (invoice.projectId) {
-    const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, invoice.projectId));
+    const project = await ProjectModel.findById(invoice.projectId).lean();
     projectName = project?.name ?? null;
   }
   return {
     ...invoice,
+    id: invoice._id.toString(),
     clientName: client?.companyName ?? null,
     projectName,
     items: invoice.items as any[],
-    dueDate: invoice.dueDate,
-    paidAt: invoice.paidAt?.toISOString() ?? null,
-    createdAt: invoice.createdAt.toISOString(),
+    paidAt: invoice.paidAt ?? null,
   };
 }
 
 router.get("/invoices", requireAuth, async (req, res): Promise<void> => {
   const qp = ListInvoicesQueryParams.safeParse(req.query);
-  const conditions = [];
-  if (qp.success && qp.data.clientId) conditions.push(eq(invoicesTable.clientId, qp.data.clientId));
-  if (qp.success && qp.data.status) conditions.push(eq(invoicesTable.status, qp.data.status));
+  const conditions: any = {};
+  if (qp.success && qp.data.clientId) conditions.clientId = qp.data.clientId.toString();
+  if (qp.success && qp.data.status) conditions.status = qp.data.status;
 
-  const invoices = await db.select().from(invoicesTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(invoicesTable.createdAt);
-
+  const invoices = await InvoiceModel.find(conditions).sort({ createdAt: 1 }).lean();
   const enriched = await Promise.all(invoices.map(enrichInvoice));
   res.json(enriched);
 });
@@ -66,16 +63,17 @@ router.post("/invoices", requireAuth, async (req, res): Promise<void> => {
   const items = parsed.data.items as Array<{ description: string; quantity: number; rate: number; amount: number }>;
   const taxRate = parsed.data.tax ?? 18;
   const { subtotal, tax, total } = calcTotals(items, taxRate);
-  const [invoice] = await db.insert(invoicesTable).values({
+  
+  const invoice = await InvoiceModel.create({
     ...parsed.data,
     invoiceNumber: generateInvoiceNumber(),
     items,
-    subtotal,
-    tax,
-    total,
+    subtotal, tax, total,
+    amountPaid: 0,
+    amountPending: total,
     status: parsed.data.status ?? "draft",
-  }).returning();
-  res.status(201).json(await enrichInvoice(invoice));
+  });
+  res.status(201).json(await enrichInvoice(invoice.toObject()));
 });
 
 router.get("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
@@ -84,12 +82,16 @@ router.get("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [invoice] = await db.select().from(invoicesTable).where(eq(invoicesTable.id, params.data.id));
-  if (!invoice) {
+  try {
+    const invoice = await InvoiceModel.findById(params.data.id).lean();
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found" });
+      return;
+    }
+    res.json(await enrichInvoice(invoice));
+  } catch (err) {
     res.status(404).json({ error: "Invoice not found" });
-    return;
   }
-  res.json(await enrichInvoice(invoice));
 });
 
 router.patch("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
@@ -110,16 +112,26 @@ router.patch("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
     updateData.subtotal = subtotal;
     updateData.tax = tax;
     updateData.total = total;
+    // Calculate pending based on previous payments
+    const existingInvoice = await InvoiceModel.findById(params.data.id).lean();
+    if (existingInvoice) {
+      updateData.amountPaid = existingInvoice.amountPaid || 0;
+      updateData.amountPending = total - updateData.amountPaid;
+    }
   }
   if (parsed.data.status === "paid" && !parsed.data.paidAt) {
-    updateData.paidAt = new Date();
+    updateData.paidAt = new Date().toISOString();
   }
-  const [invoice] = await db.update(invoicesTable).set(updateData).where(eq(invoicesTable.id, params.data.id)).returning();
-  if (!invoice) {
+  try {
+    const invoice = await InvoiceModel.findByIdAndUpdate(params.data.id, updateData, { new: true }).lean();
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found" });
+      return;
+    }
+    res.json(await enrichInvoice(invoice));
+  } catch (err) {
     res.status(404).json({ error: "Invoice not found" });
-    return;
   }
-  res.json(await enrichInvoice(invoice));
 });
 
 router.delete("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
@@ -128,12 +140,65 @@ router.delete("/invoices/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [invoice] = await db.delete(invoicesTable).where(eq(invoicesTable.id, params.data.id)).returning();
-  if (!invoice) {
+  try {
+    const invoice = await InvoiceModel.findByIdAndDelete(params.data.id).lean();
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found" });
+      return;
+    }
+    res.sendStatus(204);
+  } catch (err) {
     res.status(404).json({ error: "Invoice not found" });
+  }
+});
+
+router.post("/invoices/:id/payment", requireAuth, async (req, res): Promise<void> => {
+  const params = RecordInvoicePaymentParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
     return;
   }
-  res.sendStatus(204);
+  const parsed = RecordInvoicePaymentBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  
+  try {
+    const invoice = await InvoiceModel.findById(params.data.id);
+    if (!invoice) {
+      res.status(404).json({ error: "Invoice not found" });
+      return;
+    }
+
+    const receiptNumber = `RCPT-${Date.now()}`;
+    const newPayment = {
+      amount: parsed.data.amount,
+      method: parsed.data.method,
+      date: parsed.data.date,
+      receiptNumber
+    };
+
+    invoice.advancePayments = invoice.advancePayments || [];
+    invoice.advancePayments.push(newPayment);
+
+    // Calculate totals
+    const totalPaid = invoice.advancePayments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    invoice.amountPaid = totalPaid;
+    invoice.amountPending = invoice.total - totalPaid;
+
+    if (invoice.amountPending <= 0 && invoice.status !== "paid") {
+      invoice.status = "paid";
+      invoice.paidAt = new Date().toISOString();
+      invoice.amountPending = 0; // ensure it doesn't go negative
+    }
+
+    await invoice.save();
+    res.json(await enrichInvoice(invoice.toObject()));
+  } catch (err) {
+    console.error("Error recording payment:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

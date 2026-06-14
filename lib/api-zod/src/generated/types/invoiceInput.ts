@@ -9,9 +9,9 @@ import type { InvoiceInputStatus } from './invoiceInputStatus';
 import type { InvoiceLineItem } from './invoiceLineItem';
 
 export interface InvoiceInput {
-  clientId: number;
+  clientId: string;
   /** @nullable */
-  projectId?: number | null;
+  projectId?: string | null;
   items: InvoiceLineItem[];
   tax?: number;
   /** @nullable */

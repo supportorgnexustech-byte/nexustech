@@ -1,14 +1,12 @@
 import React from "react";
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+// Authentication removed
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Layout } from "@/components/Layout";
 import NotFound from "@/pages/not-found";
-
-import Login from "@/pages/Login";
-import Dashboard from "@/pages/Dashboard";
 import Clients from "@/pages/Clients";
 import ClientDetail from "@/pages/ClientDetail";
 import Projects from "@/pages/Projects";
@@ -19,21 +17,25 @@ import Invoices from "@/pages/Invoices";
 import InvoiceDetail from "@/pages/InvoiceDetail";
 import Pricing from "@/pages/Pricing";
 import Analytics from "@/pages/Analytics";
-import Users from "@/pages/Users";
 import Notifications from "@/pages/Notifications";
 import ClientPortal from "@/pages/ClientPortal";
+import Chat from "@/pages/Chat";
+import NexusTechLanding from "@/pages/NexusTechLanding";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ component: Component, roles = [] }: { component: React.ElementType, roles?: string[] }) {
-  const { isAuthenticated, currentUser } = useAuth();
-  
-  if (!isAuthenticated || !currentUser) {
-    return <Redirect to="/login" />;
-  }
+function ProtectedRoute({ component: Component }: { component: React.ElementType, roles?: string[] }) {
+  const [, setLocation] = useLocation();
+  const isAuthenticated = localStorage.getItem("nexus_admin_auth") === "true";
 
-  if (roles.length > 0 && !roles.includes(currentUser.role)) {
-    return <Redirect to={currentUser.role === 'client' ? "/client-portal" : "/dashboard"} />;
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      setLocation("/");
+    }
+  }, [isAuthenticated, setLocation]);
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
@@ -44,23 +46,17 @@ function ProtectedRoute({ component: Component, roles = [] }: { component: React
 }
 
 function Router() {
-  const { isAuthenticated, currentUser } = useAuth();
-
   return (
     <Switch>
-      <Route path="/login" component={Login} />
+      <Route path="/login">
+        <Redirect to="/pricing" />
+      </Route>
       
       <Route path="/">
-        {isAuthenticated ? (
-          <Redirect to={currentUser?.role === 'client' ? "/client-portal" : "/dashboard"} />
-        ) : (
-          <Redirect to="/login" />
-        )}
+        <NexusTechLanding />
       </Route>
 
-      <Route path="/dashboard">
-        <ProtectedRoute component={Dashboard} roles={["admin", "dev"]} />
-      </Route>
+
       <Route path="/clients">
         <ProtectedRoute component={Clients} roles={["admin"]} />
       </Route>
@@ -86,19 +82,19 @@ function Router() {
         <ProtectedRoute component={InvoiceDetail} roles={["admin", "client"]} />
       </Route>
       <Route path="/pricing">
-        <ProtectedRoute component={Pricing} roles={["admin"]} />
+        <ProtectedRoute component={Pricing} roles={["admin", "dev"]} />
       </Route>
       <Route path="/analytics">
         <ProtectedRoute component={Analytics} roles={["admin"]} />
-      </Route>
-      <Route path="/users">
-        <ProtectedRoute component={Users} roles={["admin"]} />
       </Route>
       <Route path="/notifications">
         <ProtectedRoute component={Notifications} />
       </Route>
       <Route path="/client-portal">
         <ProtectedRoute component={ClientPortal} roles={["client"]} />
+      </Route>
+      <Route path="/chat">
+        <ProtectedRoute component={Chat} />
       </Route>
 
       <Route>
@@ -114,11 +110,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
+        <ThemeProvider defaultTheme="light">
+          <h1 className="sr-only" style={{ display: "none" }}>Frontend</h1>
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-        </AuthProvider>
+              <Router />
+            </WouterRouter>
+        </ThemeProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

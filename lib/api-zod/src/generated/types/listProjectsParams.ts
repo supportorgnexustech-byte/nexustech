@@ -7,6 +7,6 @@
  */
 
 export type ListProjectsParams = {
-clientId?: number;
+clientId?: string;
 status?: string;
 };

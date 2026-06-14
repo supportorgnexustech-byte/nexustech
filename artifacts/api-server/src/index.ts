@@ -1,25 +1,16 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+const port = Number(process.env["PORT"]) || 5001;
+// Mute standard pino logs
+logger.level = "silent";
 
 app.listen(port, (err) => {
   if (err) {
-    logger.error({ err }, "Error listening on port");
+    console.error("Error listening on port", err);
     process.exit(1);
   }
 
-  logger.info({ port }, "Server listening");
+  console.log(`Frontend running at http://localhost:5173`);
+  console.log(`Backend server running at http://localhost:${port}`);
 });

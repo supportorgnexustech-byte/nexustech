@@ -8,7 +8,7 @@
 import type { ClientStatus } from './clientStatus';
 
 export interface Client {
-  id: number;
+  id: string;
   companyName: string;
   businessType: string;
   contactName: string;

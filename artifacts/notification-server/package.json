@@ -1,0 +1,24 @@
+{
+  "name": "@workspace/notification-server",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "NODE_ENV=development tsx watch --env-file=../../.env src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.38.0",
+    "@workspace/db": "workspace:*",
+    "ioredis": "^5.4.1",
+    "mongoose": "^8.8.0",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "~5.9.3"
+  }
+}

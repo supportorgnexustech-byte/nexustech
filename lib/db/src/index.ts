@@ -1,16 +1,11 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-import * as schema from "./schema";
+import mongoose from "mongoose";
+import * as schema from "./schema/index.js";
 
-const { Pool } = pg;
+const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/nexus";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
+mongoose.connect(MONGODB_URI)
+  .then(() => console.log("MongoDB Connected details: successfully connected to local database"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-export const db = drizzle(pool, { schema });
-
-export * from "./schema";
+export const db = mongoose;
+export * from "./schema/index.js";

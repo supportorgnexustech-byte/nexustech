@@ -7,7 +7,7 @@
  */
 
 export interface ProjectResourceSummary {
-  projectId: number;
+  projectId: string;
   projectName: string;
   devHours: number;
   hostingCost: number;

@@ -1,0 +1,19 @@
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+async function testEmail() {
+  try {
+    const data = await resend.emails.send({
+      from: "NexusTech <onboarding@resend.dev>",
+      to: "support.org.nexustech@gmail.com",
+      subject: "Test Email from Resend",
+      html: "<p>This is a test email to verify Resend API.</p>"
+    });
+    console.log("Success:", data);
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
+testEmail();

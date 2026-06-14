@@ -12,9 +12,11 @@ export interface TaskInput {
   title: string;
   /** @nullable */
   description?: string | null;
-  projectId: number;
+  projectId: string;
   /** @nullable */
-  assigneeId?: number | null;
+  featureId?: string | null;
+  /** @nullable */
+  assigneeId?: string | null;
   status: TaskInputStatus;
   priority: TaskInputPriority;
   /** @nullable */

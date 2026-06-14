@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, resourcesTable, projectsTable, clientsTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { ResourceModel, ProjectModel } from "@workspace/db";
 import {
   ListResourcesQueryParams,
   CreateResourceBody,
@@ -12,13 +11,19 @@ import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
+async function updateProjectSpent(projectId: string) {
+  const resources = await ResourceModel.find({ projectId }).lean();
+  const totalSpent = resources.reduce((sum, r) => sum + r.totalCost, 0);
+  await ProjectModel.findByIdAndUpdate(projectId, { spent: totalSpent });
+}
+
 router.get("/resources/summary", requireAuth, async (_req, res): Promise<void> => {
-  const resources = await db.select().from(resourcesTable);
-  const projects = await db.select().from(projectsTable);
-  const projectMap = new Map(projects.map(p => [p.id, p]));
+  const resources = await ResourceModel.find().lean();
+  const projects = await ProjectModel.find().lean();
+  const projectMap = new Map(projects.map(p => [p._id.toString(), p]));
 
   let totalDevHours = 0, totalHostingCost = 0, totalToolsCost = 0, totalCost = 0;
-  const byProjectMap = new Map<number, { projectId: number; projectName: string; devHours: number; hostingCost: number; toolsCost: number; totalCost: number }>();
+  const byProjectMap = new Map<string, { projectId: string; projectName: string; devHours: number; hostingCost: number; toolsCost: number; totalCost: number }>();
 
   for (const r of resources) {
     const project = projectMap.get(r.projectId);
@@ -26,10 +31,7 @@ router.get("/resources/summary", requireAuth, async (_req, res): Promise<void> =
       byProjectMap.set(r.projectId, {
         projectId: r.projectId,
         projectName: project?.name ?? `Project ${r.projectId}`,
-        devHours: 0,
-        hostingCost: 0,
-        toolsCost: 0,
-        totalCost: 0,
+        devHours: 0, hostingCost: 0, toolsCost: 0, totalCost: 0,
       });
     }
     const entry = byProjectMap.get(r.projectId)!;
@@ -41,34 +43,27 @@ router.get("/resources/summary", requireAuth, async (_req, res): Promise<void> =
   }
 
   res.json({
-    totalDevHours,
-    totalHostingCost,
-    totalToolsCost,
-    totalCost,
+    totalDevHours, totalHostingCost, totalToolsCost, totalCost,
     byProject: Array.from(byProjectMap.values()),
   });
 });
 
 router.get("/resources", requireAuth, async (req, res): Promise<void> => {
   const qp = ListResourcesQueryParams.safeParse(req.query);
-  const conditions = [];
-  if (qp.success && qp.data.projectId) conditions.push(eq(resourcesTable.projectId, qp.data.projectId));
+  const conditions: any = {};
+  if (qp.success && qp.data.projectId) conditions.projectId = qp.data.projectId.toString();
 
-  const resources = await db.select().from(resourcesTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(resourcesTable.date);
-
-  const projects = await db.select().from(projectsTable);
-  const projectMap = new Map(projects.map(p => [p.id, p]));
+  const resources = await ResourceModel.find(conditions).sort({ date: 1 }).lean();
+  const projects = await ProjectModel.find().lean();
+  const projectMap = new Map(projects.map(p => [p._id.toString(), p]));
 
   res.json(resources.map(r => {
     const project = projectMap.get(r.projectId);
     return {
       ...r,
+      id: r._id.toString(),
       projectName: project?.name ?? null,
       clientId: project?.clientId ?? null,
-      date: r.date,
-      createdAt: r.createdAt.toISOString(),
     };
   }));
 });
@@ -80,17 +75,17 @@ router.post("/resources", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const totalCost = parsed.data.quantity * parsed.data.costPerUnit;
-  const [resource] = await db.insert(resourcesTable).values({
-    ...parsed.data,
-    totalCost,
-  }).returning();
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, resource.projectId));
+  const resource = await ResourceModel.create({ ...parsed.data, totalCost });
+  const resourceObj = resource.toObject();
+  
+  await updateProjectSpent(resourceObj.projectId);
+  
+  const project = await ProjectModel.findById(resourceObj.projectId).lean();
   res.status(201).json({
-    ...resource,
+    ...resourceObj,
+    id: resourceObj._id.toString(),
     projectName: project?.name ?? null,
     clientId: project?.clientId ?? null,
-    date: resource.date,
-    createdAt: resource.createdAt.toISOString(),
   });
 });
 
@@ -109,19 +104,25 @@ router.patch("/resources/:id", requireAuth, async (req, res): Promise<void> => {
   if (parsed.data.quantity !== undefined && parsed.data.costPerUnit !== undefined) {
     updateData.totalCost = parsed.data.quantity * parsed.data.costPerUnit;
   }
-  const [resource] = await db.update(resourcesTable).set(updateData).where(eq(resourcesTable.id, params.data.id)).returning();
-  if (!resource) {
+  try {
+    const resource = await ResourceModel.findByIdAndUpdate(params.data.id, updateData, { new: true }).lean();
+    if (!resource) {
+      res.status(404).json({ error: "Resource not found" });
+      return;
+    }
+    
+    await updateProjectSpent(resource.projectId);
+    
+    const project = await ProjectModel.findById(resource.projectId).lean();
+    res.json({
+      ...resource,
+      id: resource._id.toString(),
+      projectName: project?.name ?? null,
+      clientId: project?.clientId ?? null,
+    });
+  } catch (err) {
     res.status(404).json({ error: "Resource not found" });
-    return;
   }
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, resource.projectId));
-  res.json({
-    ...resource,
-    projectName: project?.name ?? null,
-    clientId: project?.clientId ?? null,
-    date: resource.date,
-    createdAt: resource.createdAt.toISOString(),
-  });
 });
 
 router.delete("/resources/:id", requireAuth, async (req, res): Promise<void> => {
@@ -130,12 +131,19 @@ router.delete("/resources/:id", requireAuth, async (req, res): Promise<void> => 
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [resource] = await db.delete(resourcesTable).where(eq(resourcesTable.id, params.data.id)).returning();
-  if (!resource) {
+  try {
+    const resource = await ResourceModel.findByIdAndDelete(params.data.id).lean();
+    if (!resource) {
+      res.status(404).json({ error: "Resource not found" });
+      return;
+    }
+    
+    await updateProjectSpent(resource.projectId);
+    
+    res.sendStatus(204);
+  } catch (err) {
     res.status(404).json({ error: "Resource not found" });
-    return;
   }
-  res.sendStatus(204);
 });
 
 export default router;

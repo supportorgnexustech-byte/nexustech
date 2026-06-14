@@ -44,6 +44,28 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /contact:
+    post:
+      operationId: submitContact
+      tags: [public]
+      summary: Submit contact form from landing page
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitContact"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
   # ── AUTH ────────────────────────────────────────────────────────────────────
   /auth/login:
     post:
@@ -134,7 +156,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: User
@@ -152,7 +174,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -176,7 +198,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Deleted
@@ -225,7 +247,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Client
@@ -243,7 +265,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -267,7 +289,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Deleted
@@ -282,7 +304,7 @@ paths:
         - name: clientId
           in: query
           schema:
-            type: integer
+            type: string
         - name: status
           in: query
           schema:
@@ -325,7 +347,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Project
@@ -343,7 +365,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -367,7 +389,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Deleted
@@ -382,7 +404,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Milestones
@@ -403,11 +425,11 @@ paths:
         - name: projectId
           in: query
           schema:
-            type: integer
+            type: string
         - name: assigneeId
           in: query
           schema:
-            type: integer
+            type: string
         - name: status
           in: query
           schema:
@@ -440,6 +462,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Task"
 
+  /tasks/generate:
+    post:
+      operationId: generateTasks
+      tags: [tasks]
+      summary: Generate AI tasks for a feature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateTasksRequest"
+      responses:
+        "201":
+          description: Created tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+
   /tasks/{id}:
     get:
       operationId: getTask
@@ -450,7 +493,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Task
@@ -468,7 +511,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -492,7 +535,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Deleted
@@ -507,11 +550,11 @@ paths:
         - name: projectId
           in: query
           schema:
-            type: integer
+            type: string
         - name: clientId
           in: query
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: List of resource entries
@@ -550,7 +593,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -574,7 +617,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Deleted
@@ -602,7 +645,7 @@ paths:
         - name: clientId
           in: query
           schema:
-            type: integer
+            type: string
         - name: status
           in: query
           schema:
@@ -645,7 +688,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Invoice
@@ -663,7 +706,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       requestBody:
         required: true
         content:
@@ -687,10 +730,35 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "204":
           description: Deleted
+
+  /invoices/{id}/payment:
+    post:
+      operationId: recordInvoicePayment
+      tags: [invoices]
+      summary: Record an advance payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordPayment"
+      responses:
+        "200":
+          description: Payment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
 
   # ── AI PRICING ESTIMATOR ────────────────────────────────────────────────────
   /pricing/estimate:
@@ -711,6 +779,44 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PricingEstimate"
+
+  /pricing/agreement:
+    post:
+      operationId: generateAgreement
+      tags: [pricing]
+      summary: Generate agreement documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgreementRequest"
+      responses:
+        "200":
+          description: Generated agreement documents
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgreementResponse"
+
+  /pricing/sign:
+    post:
+      operationId: signAgreement
+      tags: [pricing]
+      summary: Sign and save agreement, creates client, project, and invoice in database
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignAgreementRequest"
+      responses:
+        "200":
+          description: Success response with created entities IDs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignedAgreementResult"
 
   # ── ANALYTICS ───────────────────────────────────────────────────────────────
   /analytics/dashboard:
@@ -791,7 +897,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Updated notification
@@ -834,7 +940,7 @@ components:
       required: [id, name, email, role, createdAt]
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         email:
@@ -843,7 +949,7 @@ components:
           type: string
           enum: [admin, dev, client]
         clientId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         phone:
           type: ["string", "null"]
         createdAt:
@@ -863,7 +969,7 @@ components:
           type: string
           enum: [admin, dev, client]
         clientId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         phone:
           type: ["string", "null"]
 
@@ -880,7 +986,7 @@ components:
         phone:
           type: ["string", "null"]
         clientId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
 
     # ── CLIENT ────────────────────────────────────────────────────────────────
     Client:
@@ -888,7 +994,7 @@ components:
       required: [id, companyName, businessType, contactName, contactEmail, services, status, createdAt]
       properties:
         id:
-          type: integer
+          type: string
         companyName:
           type: string
         businessType:
@@ -970,13 +1076,13 @@ components:
       required: [id, name, clientId, status, priority, startDate, createdAt]
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         description:
           type: ["string", "null"]
         clientId:
-          type: integer
+          type: string
         clientName:
           type: ["string", "null"]
         status:
@@ -998,7 +1104,13 @@ components:
         assignedDevIds:
           type: array
           items:
-            type: integer
+            type: string
+        githubRepoUrl:
+          type: ["string", "null"]
+        featuresList:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectFeatureItem"
         createdAt:
           type: string
 
@@ -1011,7 +1123,7 @@ components:
         description:
           type: ["string", "null"]
         clientId:
-          type: integer
+          type: string
         status:
           type: string
           enum: [planning, active, on_hold, completed, cancelled]
@@ -1027,7 +1139,7 @@ components:
         assignedDevIds:
           type: array
           items:
-            type: integer
+            type: string
 
     ProjectPatch:
       type: object
@@ -1053,16 +1165,33 @@ components:
         assignedDevIds:
           type: array
           items:
-            type: integer
+            type: string
+        githubRepoUrl:
+          type: ["string", "null"]
+        featuresList:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectFeatureItem"
+
+    ProjectFeatureItem:
+      type: object
+      required: [id, title, completed]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        completed:
+          type: boolean
 
     Milestone:
       type: object
       required: [id, projectId, title, dueDate, completed]
       properties:
         id:
-          type: integer
+          type: string
         projectId:
-          type: integer
+          type: string
         title:
           type: string
         description:
@@ -1080,17 +1209,19 @@ components:
       required: [id, title, projectId, status, priority, createdAt]
       properties:
         id:
-          type: integer
+          type: string
         title:
           type: string
         description:
           type: ["string", "null"]
         projectId:
-          type: integer
+          type: string
+        featureId:
+          type: ["string", "null"]
         projectName:
           type: ["string", "null"]
         assigneeId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         assigneeName:
           type: ["string", "null"]
         status:
@@ -1112,6 +1243,19 @@ components:
         createdAt:
           type: string
 
+    GenerateTasksRequest:
+      type: object
+      required: [projectId, featureId, featureTitle, projectDescription]
+      properties:
+        projectId:
+          type: string
+        featureId:
+          type: string
+        featureTitle:
+          type: string
+        projectDescription:
+          type: string
+
     TaskInput:
       type: object
       required: [title, projectId, status, priority]
@@ -1121,9 +1265,11 @@ components:
         description:
           type: ["string", "null"]
         projectId:
-          type: integer
+          type: string
+        featureId:
+          type: ["string", "null"]
         assigneeId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         status:
           type: string
           enum: [backlog, todo, in_progress, review, done]
@@ -1146,8 +1292,10 @@ components:
           type: string
         description:
           type: ["string", "null"]
+        featureId:
+          type: ["string", "null"]
         assigneeId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         status:
           type: string
           enum: [backlog, todo, in_progress, review, done]
@@ -1171,13 +1319,13 @@ components:
       required: [id, projectId, type, quantity, unit, costPerUnit, totalCost, date, createdAt]
       properties:
         id:
-          type: integer
+          type: string
         projectId:
-          type: integer
+          type: string
         projectName:
           type: ["string", "null"]
         clientId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         type:
           type: string
           enum: [dev_hours, hosting, tools, licenses, other]
@@ -1201,7 +1349,7 @@ components:
       required: [projectId, type, quantity, unit, costPerUnit, date]
       properties:
         projectId:
-          type: integer
+          type: string
         type:
           type: string
           enum: [dev_hours, hosting, tools, licenses, other]
@@ -1219,6 +1367,8 @@ components:
     ResourcePatch:
       type: object
       properties:
+        projectId:
+          type: string
         type:
           type: string
           enum: [dev_hours, hosting, tools, licenses, other]
@@ -1255,7 +1405,7 @@ components:
       required: [projectId, projectName, devHours, hostingCost, toolsCost, totalCost]
       properties:
         projectId:
-          type: integer
+          type: string
         projectName:
           type: string
         devHours:
@@ -1273,15 +1423,15 @@ components:
       required: [id, invoiceNumber, clientId, status, items, subtotal, tax, total, dueDate, createdAt]
       properties:
         id:
-          type: integer
+          type: string
         invoiceNumber:
           type: string
         clientId:
-          type: integer
+          type: string
         clientName:
           type: ["string", "null"]
         projectId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         projectName:
           type: ["string", "null"]
         status:
@@ -1297,6 +1447,14 @@ components:
           type: number
         total:
           type: number
+        amountPaid:
+          type: number
+        amountPending:
+          type: number
+        advancePayments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdvancePayment"
         notes:
           type: ["string", "null"]
         dueDate:
@@ -1304,6 +1462,20 @@ components:
         paidAt:
           type: ["string", "null"]
         createdAt:
+          type: string
+
+    AdvancePayment:
+      type: object
+      required: [amount, method, date, receiptNumber]
+      properties:
+        amount:
+          type: number
+        method:
+          type: string
+          enum: [cash, upi]
+        date:
+          type: string
+        receiptNumber:
           type: string
 
     InvoiceLineItem:
@@ -1324,9 +1496,9 @@ components:
       required: [clientId, items, dueDate]
       properties:
         clientId:
-          type: integer
+          type: string
         projectId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         items:
           type: array
           items:
@@ -1357,6 +1529,33 @@ components:
           type: string
         paidAt:
           type: ["string", "null"]
+
+    RecordPayment:
+      type: object
+      required: [amount, method, date]
+      properties:
+        amount:
+          type: number
+        method:
+          type: string
+          enum: [cash, upi]
+        date:
+          type: string
+
+    SubmitContact:
+      type: object
+      required: [firstName, lastName, email, phone, message]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        message:
+          type: string
 
     # ── PRICING ───────────────────────────────────────────────────────────────
     PricingRequest:
@@ -1416,6 +1615,75 @@ components:
         estimatedDays:
           type: number
 
+    AgreementRequest:
+      type: object
+      required: [clientName, clientEmail, companyName, selectedPlan, finalPrice, estimate]
+      properties:
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        companyName:
+          type: string
+        clientAddress:
+          type: ["string", "null"]
+        selectedPlan:
+          type: string
+        finalPrice:
+          type: number
+        estimate:
+          $ref: "#/components/schemas/PricingEstimate"
+
+    AgreementResponse:
+      type: object
+      required: [serviceAgreement, featureSpec, userStories, commercialProposal, generatedAt]
+      properties:
+        serviceAgreement:
+          type: string
+        featureSpec:
+          type: string
+        userStories:
+          type: string
+        commercialProposal:
+          type: string
+        generatedAt:
+          type: string
+
+    SignAgreementRequest:
+      type: object
+      required: [clientName, clientEmail, companyName, finalPrice, agreementHtml, selectedPlan]
+      properties:
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        companyName:
+          type: string
+        finalPrice:
+          type: number
+        agreementHtml:
+          type: string
+        selectedPlan:
+          type: string
+        projectDescription:
+          type: ["string", "null"]
+        featuresList:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectFeatureItem"
+
+    SignedAgreementResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        clientId:
+          type: string
+        projectId:
+          type: string
+        invoiceId:
+          type: string
+
     # ── ANALYTICS ─────────────────────────────────────────────────────────────
     DashboardAnalytics:
       type: object
@@ -1460,7 +1728,7 @@ components:
       required: [id, type, message, timestamp]
       properties:
         id:
-          type: integer
+          type: string
         type:
           type: string
         message:
@@ -1468,7 +1736,7 @@ components:
         timestamp:
           type: string
         entityId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
 
     ResourceBreakdownItem:
       type: object
@@ -1498,9 +1766,9 @@ components:
       required: [id, userId, type, channel, title, message, read, createdAt]
       properties:
         id:
-          type: integer
+          type: string
         userId:
-          type: integer
+          type: string
         type:
           type: string
           enum: [milestone, invoice, project_update, system]
@@ -1514,7 +1782,7 @@ components:
         read:
           type: boolean
         entityId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -1523,7 +1791,7 @@ components:
       required: [userId, type, channel, title, message]
       properties:
         userId:
-          type: integer
+          type: string
         type:
           type: string
           enum: [milestone, invoice, project_update, system]
@@ -1535,4 +1803,4 @@ components:
         message:
           type: string
         entityId:
-          type: ["integer", "null"]
+          type: ["string", "null"]

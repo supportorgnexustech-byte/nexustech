@@ -7,7 +7,7 @@
  */
 
 export type ListTasksParams = {
-projectId?: number;
-assigneeId?: number;
+projectId?: string;
+assigneeId?: string;
 status?: string;
 };

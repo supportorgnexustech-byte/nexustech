@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "@/contexts/AuthContext";
+// Authentication removed
 import { Link, useLocation } from "wouter";
 import { 
   LayoutDashboard, 
@@ -14,10 +14,14 @@ import {
   Bell, 
   LogOut,
   User as UserIcon,
-  ShieldAlert
+  ShieldAlert,
+  Sparkles,
+  Sun,
+  Moon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface NavItem {
   name: string;
@@ -27,23 +31,24 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "dev"] },
+  { name: "AI Dashboard", href: "/pricing", icon: LayoutDashboard, roles: ["admin", "dev"] },
   { name: "Clients", href: "/clients", icon: Users, roles: ["admin"] },
   { name: "Projects", href: "/projects", icon: Briefcase, roles: ["admin", "dev"] },
   { name: "Kanban", href: "/kanban", icon: KanbanSquare, roles: ["admin", "dev"] },
   { name: "Resources", href: "/resources", icon: Cpu, roles: ["admin", "dev"] },
   { name: "Invoices", href: "/invoices", icon: FileText, roles: ["admin", "client"] },
-  { name: "Pricing AI", href: "/pricing", icon: Calculator, roles: ["admin"] },
   { name: "Analytics", href: "/analytics", icon: BarChart3, roles: ["admin"] },
-  { name: "Users", href: "/users", icon: Settings, roles: ["admin"] },
+  { name: "AI Chat", href: "/chat", icon: Sparkles, roles: ["admin", "dev", "client"] },
   { name: "Client Portal", href: "/client-portal", icon: LayoutDashboard, roles: ["client"] },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { currentUser, logout } = useAuth();
+  const currentUser = { name: "Admin", role: "admin" };
+  const logout = () => { window.location.href = "/"; };
+  const { theme, setTheme } = useTheme();
   const [location] = useLocation();
 
-  if (!currentUser) return <>{children}</>;
+  // Auth removed, bypass check
 
   const filteredNav = navItems.filter((item) => item.roles.includes(currentUser.role));
 
@@ -53,8 +58,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="w-64 border-r border-border bg-card flex flex-col justify-between hidden md:flex">
         <div>
           <div className="p-6 flex items-center gap-3 border-b border-border">
-            <div className="bg-primary/20 p-2 rounded-md border border-primary/30">
-              <ShieldAlert className="w-6 h-6 text-primary" />
+            <div className="flex items-center justify-center p-1">
+              <img src="/assets/logo-dark.png" alt="Nexus Logo" className="w-8 h-8 object-contain dark:hidden" />
+              <img src="/assets/logo-light.png" alt="Nexus Logo" className="w-8 h-8 object-contain hidden dark:block" />
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight tracking-tight text-foreground">NEXUS</h1>
@@ -112,9 +118,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Top Header */}
         <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-6 shrink-0">
-          <div className="md:hidden font-bold text-lg">NEXUS</div>
+          <div className="md:hidden flex items-center gap-2">
+            <div className="flex items-center justify-center">
+              <img src="/assets/logo-dark.png" alt="Nexus Logo" className="w-6 h-6 object-contain dark:hidden" />
+              <img src="/assets/logo-light.png" alt="Nexus Logo" className="w-6 h-6 object-contain hidden dark:block" />
+            </div>
+            <span className="font-bold text-lg">NEXUS</span>
+          </div>
           <div className="flex-1" />
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-foreground hover:bg-white/5"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
             <Link href="/notifications" className="block">
               <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground hover:bg-white/5">
                 <Bell className="w-5 h-5" />

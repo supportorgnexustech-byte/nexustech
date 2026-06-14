@@ -17,6 +17,22 @@ export const HealthCheckResponse = zod.object({
 
 
 /**
+ * @summary Submit contact form from landing page
+ */
+export const SubmitContactBody = zod.object({
+  "firstName": zod.string(),
+  "lastName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "message": zod.string()
+})
+
+export const SubmitContactResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
+
+/**
  * @summary Login with email and password
  */
 export const LoginBody = zod.object({
@@ -26,11 +42,11 @@ export const LoginBody = zod.object({
 
 export const LoginResponse = zod.object({
   "user": zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['admin', 'dev', 'client']),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string()
 }),
@@ -42,11 +58,11 @@ export const LoginResponse = zod.object({
  * @summary Get current user
  */
 export const GetMeResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['admin', 'dev', 'client']),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -56,11 +72,11 @@ export const GetMeResponse = zod.object({
  * @summary List all users (Admin only)
  */
 export const ListUsersResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['admin', 'dev', 'client']),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -75,7 +91,7 @@ export const CreateUserBody = zod.object({
   "email": zod.string(),
   "password": zod.string(),
   "role": zod.enum(['admin', 'dev', 'client']),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "phone": zod.string().nullish()
 })
 
@@ -84,15 +100,15 @@ export const CreateUserBody = zod.object({
  * @summary Get a user by ID
  */
 export const GetUserParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetUserResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['admin', 'dev', 'client']),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -102,7 +118,7 @@ export const GetUserResponse = zod.object({
  * @summary Update user
  */
 export const UpdateUserParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const UpdateUserBody = zod.object({
@@ -110,15 +126,15 @@ export const UpdateUserBody = zod.object({
   "email": zod.string().optional(),
   "role": zod.enum(['admin', 'dev', 'client']).optional(),
   "phone": zod.string().nullish(),
-  "clientId": zod.number().nullish()
+  "clientId": zod.string().nullish()
 })
 
 export const UpdateUserResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "email": zod.string(),
   "role": zod.enum(['admin', 'dev', 'client']),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -128,7 +144,7 @@ export const UpdateUserResponse = zod.object({
  * @summary Delete user (Admin only)
  */
 export const DeleteUserParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 
@@ -136,7 +152,7 @@ export const DeleteUserParams = zod.object({
  * @summary List all clients
  */
 export const ListClientsResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "companyName": zod.string(),
   "businessType": zod.string(),
   "contactName": zod.string(),
@@ -171,11 +187,11 @@ export const CreateClientBody = zod.object({
  * @summary Get client by ID
  */
 export const GetClientParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetClientResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "companyName": zod.string(),
   "businessType": zod.string(),
   "contactName": zod.string(),
@@ -193,7 +209,7 @@ export const GetClientResponse = zod.object({
  * @summary Update client
  */
 export const UpdateClientParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const UpdateClientBody = zod.object({
@@ -209,7 +225,7 @@ export const UpdateClientBody = zod.object({
 })
 
 export const UpdateClientResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "companyName": zod.string(),
   "businessType": zod.string(),
   "contactName": zod.string(),
@@ -227,7 +243,7 @@ export const UpdateClientResponse = zod.object({
  * @summary Delete client
  */
 export const DeleteClientParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 
@@ -235,15 +251,15 @@ export const DeleteClientParams = zod.object({
  * @summary List all projects
  */
 export const ListProjectsQueryParams = zod.object({
-  "clientId": zod.coerce.number().optional(),
+  "clientId": zod.coerce.string().optional(),
   "status": zod.coerce.string().optional()
 })
 
 export const ListProjectsResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "description": zod.string().nullish(),
-  "clientId": zod.number(),
+  "clientId": zod.string(),
   "clientName": zod.string().nullish(),
   "status": zod.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
@@ -252,7 +268,13 @@ export const ListProjectsResponseItem = zod.object({
   "budget": zod.number().nullish(),
   "spent": zod.number().nullish(),
   "progress": zod.number().optional(),
-  "assignedDevIds": zod.array(zod.number()).optional(),
+  "assignedDevIds": zod.array(zod.string()).optional(),
+  "githubRepoUrl": zod.string().nullish(),
+  "featuresList": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "completed": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
@@ -264,13 +286,13 @@ export const ListProjectsResponse = zod.array(ListProjectsResponseItem)
 export const CreateProjectBody = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
-  "clientId": zod.number(),
+  "clientId": zod.string(),
   "status": zod.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
   "startDate": zod.string(),
   "endDate": zod.string().nullish(),
   "budget": zod.number().nullish(),
-  "assignedDevIds": zod.array(zod.number()).optional()
+  "assignedDevIds": zod.array(zod.string()).optional()
 })
 
 
@@ -278,14 +300,14 @@ export const CreateProjectBody = zod.object({
  * @summary Get project by ID
  */
 export const GetProjectParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetProjectResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "description": zod.string().nullish(),
-  "clientId": zod.number(),
+  "clientId": zod.string(),
   "clientName": zod.string().nullish(),
   "status": zod.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
@@ -294,7 +316,13 @@ export const GetProjectResponse = zod.object({
   "budget": zod.number().nullish(),
   "spent": zod.number().nullish(),
   "progress": zod.number().optional(),
-  "assignedDevIds": zod.array(zod.number()).optional(),
+  "assignedDevIds": zod.array(zod.string()).optional(),
+  "githubRepoUrl": zod.string().nullish(),
+  "featuresList": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "completed": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 
@@ -303,7 +331,7 @@ export const GetProjectResponse = zod.object({
  * @summary Update project
  */
 export const UpdateProjectParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const UpdateProjectBody = zod.object({
@@ -315,14 +343,20 @@ export const UpdateProjectBody = zod.object({
   "budget": zod.number().nullish(),
   "spent": zod.number().nullish(),
   "progress": zod.number().optional(),
-  "assignedDevIds": zod.array(zod.number()).optional()
+  "assignedDevIds": zod.array(zod.string()).optional(),
+  "githubRepoUrl": zod.string().nullish(),
+  "featuresList": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "completed": zod.boolean()
+})).optional()
 })
 
 export const UpdateProjectResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "description": zod.string().nullish(),
-  "clientId": zod.number(),
+  "clientId": zod.string(),
   "clientName": zod.string().nullish(),
   "status": zod.enum(['planning', 'active', 'on_hold', 'completed', 'cancelled']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
@@ -331,7 +365,13 @@ export const UpdateProjectResponse = zod.object({
   "budget": zod.number().nullish(),
   "spent": zod.number().nullish(),
   "progress": zod.number().optional(),
-  "assignedDevIds": zod.array(zod.number()).optional(),
+  "assignedDevIds": zod.array(zod.string()).optional(),
+  "githubRepoUrl": zod.string().nullish(),
+  "featuresList": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "completed": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 
@@ -340,7 +380,7 @@ export const UpdateProjectResponse = zod.object({
  * @summary Delete project
  */
 export const DeleteProjectParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 
@@ -348,12 +388,12 @@ export const DeleteProjectParams = zod.object({
  * @summary List milestones for a project
  */
 export const ListProjectMilestonesParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const ListProjectMilestonesResponseItem = zod.object({
-  "id": zod.number(),
-  "projectId": zod.number(),
+  "id": zod.string(),
+  "projectId": zod.string(),
   "title": zod.string(),
   "description": zod.string().nullish(),
   "dueDate": zod.string(),
@@ -367,18 +407,19 @@ export const ListProjectMilestonesResponse = zod.array(ListProjectMilestonesResp
  * @summary List tasks
  */
 export const ListTasksQueryParams = zod.object({
-  "projectId": zod.coerce.number().optional(),
-  "assigneeId": zod.coerce.number().optional(),
+  "projectId": zod.coerce.string().optional(),
+  "assigneeId": zod.coerce.string().optional(),
   "status": zod.coerce.string().optional()
 })
 
 export const ListTasksResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "title": zod.string(),
   "description": zod.string().nullish(),
-  "projectId": zod.number(),
+  "projectId": zod.string(),
+  "featureId": zod.string().nullish(),
   "projectName": zod.string().nullish(),
-  "assigneeId": zod.number().nullish(),
+  "assigneeId": zod.string().nullish(),
   "assigneeName": zod.string().nullish(),
   "status": zod.enum(['backlog', 'todo', 'in_progress', 'review', 'done']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
@@ -397,8 +438,9 @@ export const ListTasksResponse = zod.array(ListTasksResponseItem)
 export const CreateTaskBody = zod.object({
   "title": zod.string(),
   "description": zod.string().nullish(),
-  "projectId": zod.number(),
-  "assigneeId": zod.number().nullish(),
+  "projectId": zod.string(),
+  "featureId": zod.string().nullish(),
+  "assigneeId": zod.string().nullish(),
   "status": zod.enum(['backlog', 'todo', 'in_progress', 'review', 'done']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
   "dueDate": zod.string().nullish(),
@@ -408,19 +450,31 @@ export const CreateTaskBody = zod.object({
 
 
 /**
+ * @summary Generate AI tasks for a feature
+ */
+export const GenerateTasksBody = zod.object({
+  "projectId": zod.string(),
+  "featureId": zod.string(),
+  "featureTitle": zod.string(),
+  "projectDescription": zod.string()
+})
+
+
+/**
  * @summary Get task by ID
  */
 export const GetTaskParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetTaskResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "title": zod.string(),
   "description": zod.string().nullish(),
-  "projectId": zod.number(),
+  "projectId": zod.string(),
+  "featureId": zod.string().nullish(),
   "projectName": zod.string().nullish(),
-  "assigneeId": zod.number().nullish(),
+  "assigneeId": zod.string().nullish(),
   "assigneeName": zod.string().nullish(),
   "status": zod.enum(['backlog', 'todo', 'in_progress', 'review', 'done']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
@@ -436,13 +490,14 @@ export const GetTaskResponse = zod.object({
  * @summary Update task (move Kanban column, edit, assign)
  */
 export const UpdateTaskParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const UpdateTaskBody = zod.object({
   "title": zod.string().optional(),
   "description": zod.string().nullish(),
-  "assigneeId": zod.number().nullish(),
+  "featureId": zod.string().nullish(),
+  "assigneeId": zod.string().nullish(),
   "status": zod.enum(['backlog', 'todo', 'in_progress', 'review', 'done']).optional(),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']).optional(),
   "dueDate": zod.string().nullish(),
@@ -452,12 +507,13 @@ export const UpdateTaskBody = zod.object({
 })
 
 export const UpdateTaskResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "title": zod.string(),
   "description": zod.string().nullish(),
-  "projectId": zod.number(),
+  "projectId": zod.string(),
+  "featureId": zod.string().nullish(),
   "projectName": zod.string().nullish(),
-  "assigneeId": zod.number().nullish(),
+  "assigneeId": zod.string().nullish(),
   "assigneeName": zod.string().nullish(),
   "status": zod.enum(['backlog', 'todo', 'in_progress', 'review', 'done']),
   "priority": zod.enum(['low', 'medium', 'high', 'critical']),
@@ -473,7 +529,7 @@ export const UpdateTaskResponse = zod.object({
  * @summary Delete task
  */
 export const DeleteTaskParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 
@@ -481,15 +537,15 @@ export const DeleteTaskParams = zod.object({
  * @summary List resource consumption entries
  */
 export const ListResourcesQueryParams = zod.object({
-  "projectId": zod.coerce.number().optional(),
-  "clientId": zod.coerce.number().optional()
+  "projectId": zod.coerce.string().optional(),
+  "clientId": zod.coerce.string().optional()
 })
 
 export const ListResourcesResponseItem = zod.object({
-  "id": zod.number(),
-  "projectId": zod.number(),
+  "id": zod.string(),
+  "projectId": zod.string(),
   "projectName": zod.string().nullish(),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "type": zod.enum(['dev_hours', 'hosting', 'tools', 'licenses', 'other']),
   "description": zod.string().nullish(),
   "quantity": zod.number(),
@@ -506,7 +562,7 @@ export const ListResourcesResponse = zod.array(ListResourcesResponseItem)
  * @summary Log a resource consumption entry
  */
 export const CreateResourceBody = zod.object({
-  "projectId": zod.number(),
+  "projectId": zod.string(),
   "type": zod.enum(['dev_hours', 'hosting', 'tools', 'licenses', 'other']),
   "description": zod.string().nullish(),
   "quantity": zod.number(),
@@ -520,10 +576,11 @@ export const CreateResourceBody = zod.object({
  * @summary Update resource entry
  */
 export const UpdateResourceParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const UpdateResourceBody = zod.object({
+  "projectId": zod.string().optional(),
   "type": zod.enum(['dev_hours', 'hosting', 'tools', 'licenses', 'other']).optional(),
   "description": zod.string().nullish(),
   "quantity": zod.number().optional(),
@@ -533,10 +590,10 @@ export const UpdateResourceBody = zod.object({
 })
 
 export const UpdateResourceResponse = zod.object({
-  "id": zod.number(),
-  "projectId": zod.number(),
+  "id": zod.string(),
+  "projectId": zod.string(),
   "projectName": zod.string().nullish(),
-  "clientId": zod.number().nullish(),
+  "clientId": zod.string().nullish(),
   "type": zod.enum(['dev_hours', 'hosting', 'tools', 'licenses', 'other']),
   "description": zod.string().nullish(),
   "quantity": zod.number(),
@@ -552,7 +609,7 @@ export const UpdateResourceResponse = zod.object({
  * @summary Delete resource entry
  */
 export const DeleteResourceParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 
@@ -565,7 +622,7 @@ export const GetResourceSummaryResponse = zod.object({
   "totalToolsCost": zod.number(),
   "totalCost": zod.number(),
   "byProject": zod.array(zod.object({
-  "projectId": zod.number(),
+  "projectId": zod.string(),
   "projectName": zod.string(),
   "devHours": zod.number(),
   "hostingCost": zod.number(),
@@ -579,16 +636,16 @@ export const GetResourceSummaryResponse = zod.object({
  * @summary List invoices
  */
 export const ListInvoicesQueryParams = zod.object({
-  "clientId": zod.coerce.number().optional(),
+  "clientId": zod.coerce.string().optional(),
   "status": zod.coerce.string().optional()
 })
 
 export const ListInvoicesResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "invoiceNumber": zod.string(),
-  "clientId": zod.number(),
+  "clientId": zod.string(),
   "clientName": zod.string().nullish(),
-  "projectId": zod.number().nullish(),
+  "projectId": zod.string().nullish(),
   "projectName": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
   "items": zod.array(zod.object({
@@ -600,6 +657,14 @@ export const ListInvoicesResponseItem = zod.object({
   "subtotal": zod.number(),
   "tax": zod.number(),
   "total": zod.number(),
+  "amountPaid": zod.number().optional(),
+  "amountPending": zod.number().optional(),
+  "advancePayments": zod.array(zod.object({
+  "amount": zod.number(),
+  "method": zod.enum(['cash', 'upi']),
+  "date": zod.string(),
+  "receiptNumber": zod.string()
+})).optional(),
   "notes": zod.string().nullish(),
   "dueDate": zod.string(),
   "paidAt": zod.string().nullish(),
@@ -612,8 +677,8 @@ export const ListInvoicesResponse = zod.array(ListInvoicesResponseItem)
  * @summary Create an invoice
  */
 export const CreateInvoiceBody = zod.object({
-  "clientId": zod.number(),
-  "projectId": zod.number().nullish(),
+  "clientId": zod.string(),
+  "projectId": zod.string().nullish(),
   "items": zod.array(zod.object({
   "description": zod.string(),
   "quantity": zod.number(),
@@ -631,15 +696,15 @@ export const CreateInvoiceBody = zod.object({
  * @summary Get invoice by ID
  */
 export const GetInvoiceParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetInvoiceResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "invoiceNumber": zod.string(),
-  "clientId": zod.number(),
+  "clientId": zod.string(),
   "clientName": zod.string().nullish(),
-  "projectId": zod.number().nullish(),
+  "projectId": zod.string().nullish(),
   "projectName": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
   "items": zod.array(zod.object({
@@ -651,6 +716,14 @@ export const GetInvoiceResponse = zod.object({
   "subtotal": zod.number(),
   "tax": zod.number(),
   "total": zod.number(),
+  "amountPaid": zod.number().optional(),
+  "amountPending": zod.number().optional(),
+  "advancePayments": zod.array(zod.object({
+  "amount": zod.number(),
+  "method": zod.enum(['cash', 'upi']),
+  "date": zod.string(),
+  "receiptNumber": zod.string()
+})).optional(),
   "notes": zod.string().nullish(),
   "dueDate": zod.string(),
   "paidAt": zod.string().nullish(),
@@ -662,7 +735,7 @@ export const GetInvoiceResponse = zod.object({
  * @summary Update invoice status/details
  */
 export const UpdateInvoiceParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const UpdateInvoiceBody = zod.object({
@@ -679,11 +752,11 @@ export const UpdateInvoiceBody = zod.object({
 })
 
 export const UpdateInvoiceResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "invoiceNumber": zod.string(),
-  "clientId": zod.number(),
+  "clientId": zod.string(),
   "clientName": zod.string().nullish(),
-  "projectId": zod.number().nullish(),
+  "projectId": zod.string().nullish(),
   "projectName": zod.string().nullish(),
   "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
   "items": zod.array(zod.object({
@@ -695,6 +768,14 @@ export const UpdateInvoiceResponse = zod.object({
   "subtotal": zod.number(),
   "tax": zod.number(),
   "total": zod.number(),
+  "amountPaid": zod.number().optional(),
+  "amountPending": zod.number().optional(),
+  "advancePayments": zod.array(zod.object({
+  "amount": zod.number(),
+  "method": zod.enum(['cash', 'upi']),
+  "date": zod.string(),
+  "receiptNumber": zod.string()
+})).optional(),
   "notes": zod.string().nullish(),
   "dueDate": zod.string(),
   "paidAt": zod.string().nullish(),
@@ -706,7 +787,52 @@ export const UpdateInvoiceResponse = zod.object({
  * @summary Delete invoice
  */
 export const DeleteInvoiceParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
+})
+
+
+/**
+ * @summary Record an advance payment
+ */
+export const RecordInvoicePaymentParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const RecordInvoicePaymentBody = zod.object({
+  "amount": zod.number(),
+  "method": zod.enum(['cash', 'upi']),
+  "date": zod.string()
+})
+
+export const RecordInvoicePaymentResponse = zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "clientId": zod.string(),
+  "clientName": zod.string().nullish(),
+  "projectId": zod.string().nullish(),
+  "projectName": zod.string().nullish(),
+  "status": zod.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
+  "items": zod.array(zod.object({
+  "description": zod.string(),
+  "quantity": zod.number(),
+  "rate": zod.number(),
+  "amount": zod.number()
+})),
+  "subtotal": zod.number(),
+  "tax": zod.number(),
+  "total": zod.number(),
+  "amountPaid": zod.number().optional(),
+  "amountPending": zod.number().optional(),
+  "advancePayments": zod.array(zod.object({
+  "amount": zod.number(),
+  "method": zod.enum(['cash', 'upi']),
+  "date": zod.string(),
+  "receiptNumber": zod.string()
+})).optional(),
+  "notes": zod.string().nullish(),
+  "dueDate": zod.string(),
+  "paidAt": zod.string().nullish(),
+  "createdAt": zod.string()
 })
 
 
@@ -741,6 +867,72 @@ export const EstimatePriceResponse = zod.object({
 
 
 /**
+ * @summary Generate agreement documents
+ */
+export const GenerateAgreementBody = zod.object({
+  "clientName": zod.string(),
+  "clientEmail": zod.string(),
+  "companyName": zod.string(),
+  "clientAddress": zod.string().nullish(),
+  "selectedPlan": zod.string(),
+  "finalPrice": zod.number(),
+  "estimate": zod.object({
+  "summary": zod.string(),
+  "projectType": zod.string().optional(),
+  "complexity": zod.enum(['low', 'medium', 'high', 'enterprise']).optional(),
+  "features": zod.array(zod.object({
+  "name": zod.string(),
+  "description": zod.string(),
+  "complexity": zod.enum(['low', 'medium', 'high']),
+  "minPrice": zod.number(),
+  "maxPrice": zod.number(),
+  "estimatedDays": zod.number()
+})),
+  "totalEstimate": zod.number(),
+  "minEstimate": zod.number().optional(),
+  "maxEstimate": zod.number().optional(),
+  "estimatedWeeks": zod.number().optional(),
+  "currency": zod.string(),
+  "generatedAt": zod.string()
+})
+})
+
+export const GenerateAgreementResponse = zod.object({
+  "serviceAgreement": zod.string(),
+  "featureSpec": zod.string(),
+  "userStories": zod.string(),
+  "commercialProposal": zod.string(),
+  "generatedAt": zod.string()
+})
+
+
+/**
+ * @summary Sign and save agreement, creates client, project, and invoice in database
+ */
+export const SignAgreementBody = zod.object({
+  "clientName": zod.string(),
+  "clientEmail": zod.string(),
+  "companyName": zod.string(),
+  "finalPrice": zod.number(),
+  "agreementHtml": zod.string(),
+  "selectedPlan": zod.string(),
+  "projectDescription": zod.string().nullish(),
+  "featuresList": zod.array(zod.object({
+  "id": zod.string(),
+  "title": zod.string(),
+  "completed": zod.boolean()
+})).optional()
+})
+
+export const SignAgreementResponse = zod.object({
+  "success": zod.boolean().optional(),
+  "clientId": zod.string().optional(),
+  "projectId": zod.string().optional(),
+  "invoiceId": zod.string().optional()
+})
+
+
+/**
  * @summary Monthly analytics dashboard data
  */
 export const GetDashboardAnalyticsQueryParams = zod.object({
@@ -760,11 +952,11 @@ export const GetDashboardAnalyticsResponse = zod.object({
   "totalOutstanding": zod.number()
 }),
   "recentActivity": zod.array(zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "type": zod.string(),
   "message": zod.string(),
   "timestamp": zod.string(),
-  "entityId": zod.number().nullish()
+  "entityId": zod.string().nullish()
 })),
   "resourceBreakdown": zod.array(zod.object({
   "type": zod.string(),
@@ -789,14 +981,14 @@ export const GetRevenueAnalyticsResponse = zod.array(GetRevenueAnalyticsResponse
  * @summary List notifications for current user
  */
 export const ListNotificationsResponseItem = zod.object({
-  "id": zod.number(),
-  "userId": zod.number(),
+  "id": zod.string(),
+  "userId": zod.string(),
   "type": zod.enum(['milestone', 'invoice', 'project_update', 'system']),
   "channel": zod.enum(['in_app', 'email', 'whatsapp']),
   "title": zod.string(),
   "message": zod.string(),
   "read": zod.boolean(),
-  "entityId": zod.number().nullish(),
+  "entityId": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem)
@@ -806,12 +998,12 @@ export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem
  * @summary Send a notification (email/whatsapp for milestone)
  */
 export const SendNotificationBody = zod.object({
-  "userId": zod.number(),
+  "userId": zod.string(),
   "type": zod.enum(['milestone', 'invoice', 'project_update', 'system']),
   "channel": zod.enum(['in_app', 'email', 'whatsapp']),
   "title": zod.string(),
   "message": zod.string(),
-  "entityId": zod.number().nullish()
+  "entityId": zod.string().nullish()
 })
 
 
@@ -819,18 +1011,18 @@ export const SendNotificationBody = zod.object({
  * @summary Mark a notification as read
  */
 export const MarkNotificationReadParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const MarkNotificationReadResponse = zod.object({
-  "id": zod.number(),
-  "userId": zod.number(),
+  "id": zod.string(),
+  "userId": zod.string(),
   "type": zod.enum(['milestone', 'invoice', 'project_update', 'system']),
   "channel": zod.enum(['in_app', 'email', 'whatsapp']),
   "title": zod.string(),
   "message": zod.string(),
   "read": zod.boolean(),
-  "entityId": zod.number().nullish(),
+  "entityId": zod.string().nullish(),
   "createdAt": zod.string()
 })
 

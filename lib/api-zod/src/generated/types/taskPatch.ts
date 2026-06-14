@@ -13,7 +13,9 @@ export interface TaskPatch {
   /** @nullable */
   description?: string | null;
   /** @nullable */
-  assigneeId?: number | null;
+  featureId?: string | null;
+  /** @nullable */
+  assigneeId?: string | null;
   status?: TaskPatchStatus;
   priority?: TaskPatchPriority;
   /** @nullable */

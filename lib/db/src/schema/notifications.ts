@@ -1,19 +1,27 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose from "mongoose";
+import { z } from "zod";
 
-export const notificationsTable = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  type: text("type").notNull().default("system"),
-  channel: text("channel").notNull().default("in_app"),
-  title: text("title").notNull(),
-  message: text("message").notNull(),
-  read: integer("read").notNull().default(0),
-  entityId: integer("entity_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+const NotificationSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  type: { type: String, default: "system" },
+  channel: { type: String, default: "in_app" },
+  title: { type: String, required: true },
+  message: { type: String, required: true },
+  read: { type: Number, default: 0 },
+  entityId: { type: String },
+}, { timestamps: true });
+
+export const NotificationModel = mongoose.models.Notification || mongoose.model("Notification", NotificationSchema);
+
+export const insertNotificationSchema = z.object({
+  userId: z.union([z.string(), z.number()]),
+  type: z.string().optional(),
+  channel: z.string().optional(),
+  title: z.string(),
+  message: z.string(),
+  read: z.number().optional(),
+  entityId: z.union([z.string(), z.number()]).optional(),
 });
 
-export const insertNotificationSchema = createInsertSchema(notificationsTable).omit({ id: true, createdAt: true });
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
-export type Notification = typeof notificationsTable.$inferSelect;
+export type NotificationType = mongoose.Document & InsertNotification & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };

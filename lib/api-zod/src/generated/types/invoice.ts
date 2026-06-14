@@ -5,17 +5,18 @@
  * Nexus Tech Solutions Client Management Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdvancePayment } from './advancePayment';
 import type { InvoiceLineItem } from './invoiceLineItem';
 import type { InvoiceStatus } from './invoiceStatus';
 
 export interface Invoice {
-  id: number;
+  id: string;
   invoiceNumber: string;
-  clientId: number;
+  clientId: string;
   /** @nullable */
   clientName?: string | null;
   /** @nullable */
-  projectId?: number | null;
+  projectId?: string | null;
   /** @nullable */
   projectName?: string | null;
   status: InvoiceStatus;
@@ -23,6 +24,9 @@ export interface Invoice {
   subtotal: number;
   tax: number;
   total: number;
+  amountPaid?: number;
+  amountPending?: number;
+  advancePayments?: AdvancePayment[];
   /** @nullable */
   notes?: string | null;
   dueDate: string;

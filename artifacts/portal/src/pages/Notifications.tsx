@@ -1,7 +1,7 @@
 import React from "react";
 import { useListNotifications, useMarkNotificationRead } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Bell, BellOff, CheckCircle, Milestone, FileText, Briefcase } from "lucide-react";
+import { Loader2, Bell, BellOff, CheckCircle, Milestone, FileText, Briefcase, CheckCircle2, MessageSquare, IndianRupee, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -26,7 +26,7 @@ export default function Notifications() {
 
   const unread = notifications?.filter(n => !n.read).length ?? 0;
 
-  const handleMarkRead = async (id: number) => {
+  const handleMarkRead = async (id: string) => {
     await markRead.mutateAsync({ id });
     qc.invalidateQueries({ queryKey: ["listNotifications"] });
   };
@@ -35,7 +35,10 @@ export default function Notifications() {
     <div className="space-y-6 fade-in max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <Bell className="w-8 h-8 text-primary" />
+            Notifications
+          </h1>
           <p className="text-muted-foreground mt-1">
             {unread > 0 ? `${unread} unread notification${unread > 1 ? "s" : ""}` : "All caught up!"}
           </p>

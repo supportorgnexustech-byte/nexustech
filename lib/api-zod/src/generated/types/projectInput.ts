@@ -12,7 +12,7 @@ export interface ProjectInput {
   name: string;
   /** @nullable */
   description?: string | null;
-  clientId: number;
+  clientId: string;
   status: ProjectInputStatus;
   priority: ProjectInputPriority;
   startDate: string;
@@ -20,5 +20,5 @@ export interface ProjectInput {
   endDate?: string | null;
   /** @nullable */
   budget?: number | null;
-  assignedDevIds?: number[];
+  assignedDevIds?: string[];
 }

@@ -14,5 +14,5 @@ export interface UserPatch {
   /** @nullable */
   phone?: string | null;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
 }

@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { UserModel } from "@workspace/db";
 import { LoginBody } from "@workspace/api-zod";
 import { hashPassword, verifyPassword, generateToken, storeToken, invalidateToken, requireAuth } from "../lib/auth";
 
@@ -13,15 +12,16 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
   const { email, password } = parsed.data;
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+  const user = await UserModel.findOne({ email }).lean();
   if (!user || !verifyPassword(password, user.passwordHash)) {
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
-  const token = generateToken(user.id);
-  storeToken(token, user.id);
-  const { passwordHash: _, ...safeUser } = user;
-  res.json({ user: { ...safeUser, createdAt: safeUser.createdAt.toISOString() }, token });
+  const token = generateToken(user._id.toString() as any);
+  storeToken(token, user._id.toString() as any);
+  const { passwordHash: _, ...safeUser } = user as any;
+  safeUser.id = user._id.toString();
+  res.json({ user: safeUser, token });
 });
 
 router.post("/auth/logout", requireAuth, (req, res): void => {
@@ -35,7 +35,7 @@ router.post("/auth/logout", requireAuth, (req, res): void => {
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
   const user = (req as any).user;
   const { passwordHash: _, ...safeUser } = user;
-  res.json({ ...safeUser, createdAt: safeUser.createdAt.toISOString() });
+  res.json(safeUser);
 });
 
 export default router;

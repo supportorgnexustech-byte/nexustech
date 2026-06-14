@@ -7,6 +7,6 @@
  */
 
 export type ListResourcesParams = {
-projectId?: number;
-clientId?: number;
+projectId?: string;
+clientId?: string;
 };

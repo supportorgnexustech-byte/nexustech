@@ -1,24 +1,58 @@
-import { pgTable, text, serial, timestamp, integer, real, date, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose from "mongoose";
+import { z } from "zod";
 
-export const invoicesTable = pgTable("invoices", {
-  id: serial("id").primaryKey(),
-  invoiceNumber: text("invoice_number").notNull().unique(),
-  clientId: integer("client_id").notNull(),
-  projectId: integer("project_id"),
-  status: text("status").notNull().default("draft"),
-  items: jsonb("items").notNull().default([]),
-  subtotal: real("subtotal").notNull().default(0),
-  tax: real("tax").notNull().default(0),
-  total: real("total").notNull().default(0),
-  notes: text("notes"),
-  dueDate: date("due_date", { mode: "string" }).notNull(),
-  paidAt: timestamp("paid_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+const InvoiceSchema = new mongoose.Schema({
+  invoiceNumber: { type: String, required: true, unique: true },
+  clientId: { type: String, required: true },
+  projectId: { type: String },
+  status: { type: String, default: "draft" },
+  items: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  subtotal: { type: Number, default: 0 },
+  tax: { type: Number, default: 0 },
+  total: { type: Number, default: 0 },
+  amountPaid: { type: Number, default: 0 },
+  amountPending: { type: Number, default: 0 },
+  advancePayments: { 
+    type: [{
+      amount: Number,
+      method: { type: String, enum: ["cash", "upi"] },
+      date: String,
+      receiptNumber: String
+    }], 
+    default: [] 
+  },
+  notes: { type: String },
+  dueDate: { type: String, required: true },
+  paidAt: { type: String },
+}, { timestamps: true });
+
+InvoiceSchema.index({ clientId: 1 });
+InvoiceSchema.index({ status: 1 });
+InvoiceSchema.index({ clientId: 1, status: 1 });
+
+export const InvoiceModel = mongoose.models.Invoice || mongoose.model("Invoice", InvoiceSchema);
+
+export const insertInvoiceSchema = z.object({
+  invoiceNumber: z.string(),
+  clientId: z.union([z.string(), z.number()]),
+  projectId: z.union([z.string(), z.number()]).optional(),
+  status: z.string().optional(),
+  items: z.array(z.any()).optional(),
+  subtotal: z.number().optional(),
+  tax: z.number().optional(),
+  total: z.number().optional(),
+  amountPaid: z.number().optional(),
+  amountPending: z.number().optional(),
+  advancePayments: z.array(z.object({
+    amount: z.number(),
+    method: z.enum(["cash", "upi"]),
+    date: z.string(),
+    receiptNumber: z.string()
+  })).optional(),
+  notes: z.string().optional(),
+  dueDate: z.string(),
+  paidAt: z.string().optional(),
 });
 
-export const insertInvoiceSchema = createInsertSchema(invoicesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
-export type Invoice = typeof invoicesTable.$inferSelect;
+export type InvoiceType = mongoose.Document & InsertInvoice & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };

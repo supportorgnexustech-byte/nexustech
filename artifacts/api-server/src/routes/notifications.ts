@@ -1,20 +1,19 @@
 import { Router, type IRouter } from "express";
-import { db, notificationsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { NotificationModel } from "@workspace/db";
 import { SendNotificationBody, MarkNotificationReadParams } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
+import { cacheMiddleware } from "../lib/cache";
+import { invalidateCache } from "../lib/upstash";
 
 const router: IRouter = Router();
 
-router.get("/notifications", requireAuth, async (req, res): Promise<void> => {
+router.get("/notifications", requireAuth, cacheMiddleware(60), async (req, res): Promise<void> => {
   const user = (req as any).user;
-  const notifications = await db.select().from(notificationsTable)
-    .where(eq(notificationsTable.userId, user.id))
-    .orderBy(notificationsTable.createdAt);
+  const notifications = await NotificationModel.find({ userId: user.id.toString() }).sort({ createdAt: 1 }).lean();
   res.json(notifications.map(n => ({
     ...n,
+    id: n._id.toString(),
     read: n.read === 1,
-    createdAt: n.createdAt.toISOString(),
   })));
 });
 
@@ -24,11 +23,13 @@ router.post("/notifications", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [notification] = await db.insert(notificationsTable).values({
+  const notification = await NotificationModel.create({
     ...parsed.data,
     read: 0,
-  }).returning();
-  res.status(201).json({ ...notification, read: notification.read === 1, createdAt: notification.createdAt.toISOString() });
+  });
+  const n = notification.toObject();
+  await invalidateCache("cache:*/notifications*");
+  res.status(201).json({ ...n, id: n._id.toString(), read: n.read === 1 });
 });
 
 router.patch("/notifications/:id/read", requireAuth, async (req, res): Promise<void> => {
@@ -37,15 +38,17 @@ router.patch("/notifications/:id/read", requireAuth, async (req, res): Promise<v
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [notification] = await db.update(notificationsTable)
-    .set({ read: 1 })
-    .where(eq(notificationsTable.id, params.data.id))
-    .returning();
-  if (!notification) {
+  try {
+    const notification = await NotificationModel.findByIdAndUpdate(params.data.id, { read: 1 }, { new: true }).lean();
+    if (!notification) {
+      res.status(404).json({ error: "Notification not found" });
+      return;
+    }
+    await invalidateCache("cache:*/notifications*");
+    res.json({ ...notification, id: notification._id.toString(), read: notification.read === 1 });
+  } catch (err) {
     res.status(404).json({ error: "Notification not found" });
-    return;
   }
-  res.json({ ...notification, read: notification.read === 1, createdAt: notification.createdAt.toISOString() });
 });
 
 export default router;

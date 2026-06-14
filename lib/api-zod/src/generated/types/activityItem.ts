@@ -7,10 +7,10 @@
  */
 
 export interface ActivityItem {
-  id: number;
+  id: string;
   type: string;
   message: string;
   timestamp: string;
   /** @nullable */
-  entityId?: number | null;
+  entityId?: string | null;
 }

@@ -8,6 +8,7 @@
 import type { ResourcePatchType } from './resourcePatchType';
 
 export interface ResourcePatch {
+  projectId?: string;
   type?: ResourcePatchType;
   /** @nullable */
   description?: string | null;

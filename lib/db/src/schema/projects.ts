@@ -1,39 +1,76 @@
-import { pgTable, text, serial, timestamp, integer, real, date } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose from "mongoose";
+import { z } from "zod";
 
-export const projectsTable = pgTable("projects", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  clientId: integer("client_id").notNull(),
-  status: text("status").notNull().default("planning"),
-  priority: text("priority").notNull().default("medium"),
-  startDate: date("start_date", { mode: "string" }).notNull(),
-  endDate: date("end_date", { mode: "string" }),
-  budget: real("budget"),
-  spent: real("spent").default(0),
-  progress: integer("progress").notNull().default(0),
-  assignedDevIds: integer("assigned_dev_ids").array().notNull().default([]),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+const ProjectSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: { type: String },
+  clientId: { type: String, required: true },
+  status: { type: String, default: "planning" },
+  priority: { type: String, default: "medium" },
+  startDate: { type: String, required: true },
+  endDate: { type: String },
+  budget: { type: Number },
+  spent: { type: Number, default: 0 },
+  progress: { type: Number, default: 0 },
+  assignedDevIds: { type: [String], default: [] },
+  githubRepoUrl: { type: String },
+  featuresList: [{
+    id: { type: String, required: true },
+    title: { type: String, required: true },
+    completed: { type: Boolean, default: false }
+  }]
+}, { timestamps: true });
+
+ProjectSchema.index({ clientId: 1 });
+ProjectSchema.index({ status: 1 });
+ProjectSchema.index({ clientId: 1, status: 1 });
+
+export const ProjectModel = mongoose.models.Project || mongoose.model("Project", ProjectSchema);
+
+const MilestoneSchema = new mongoose.Schema({
+  projectId: { type: String, required: true },
+  title: { type: String, required: true },
+  description: { type: String },
+  dueDate: { type: String, required: true },
+  completed: { type: Number, default: 0 },
+  completedAt: { type: String },
+}, { timestamps: true });
+
+MilestoneSchema.index({ projectId: 1 });
+
+export const MilestoneModel = mongoose.models.Milestone || mongoose.model("Milestone", MilestoneSchema);
+
+export const insertProjectSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  clientId: z.union([z.string(), z.number()]),
+  status: z.string().optional(),
+  priority: z.string().optional(),
+  startDate: z.string(),
+  endDate: z.string().optional(),
+  budget: z.number().optional(),
+  spent: z.number().optional(),
+  progress: z.number().optional(),
+  assignedDevIds: z.array(z.union([z.string(), z.number()])).optional(),
+  githubRepoUrl: z.string().optional(),
+  featuresList: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    completed: z.boolean().optional()
+  })).optional()
 });
 
-export const milestonesTable = pgTable("milestones", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id").notNull(),
-  title: text("title").notNull(),
-  description: text("description"),
-  dueDate: date("due_date", { mode: "string" }).notNull(),
-  completed: integer("completed").notNull().default(0),
-  completedAt: timestamp("completed_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+export const insertMilestoneSchema = z.object({
+  projectId: z.union([z.string(), z.number()]),
+  title: z.string(),
+  description: z.string().optional(),
+  dueDate: z.string(),
+  completed: z.number().optional(),
+  completedAt: z.string().optional(),
 });
 
-export const insertProjectSchema = createInsertSchema(projectsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertProject = z.infer<typeof insertProjectSchema>;
-export type Project = typeof projectsTable.$inferSelect;
+export type ProjectType = mongoose.Document & InsertProject & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };
 
-export const insertMilestoneSchema = createInsertSchema(milestonesTable).omit({ id: true, createdAt: true });
 export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
-export type Milestone = typeof milestonesTable.$inferSelect;
+export type MilestoneType = mongoose.Document & InsertMilestone & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };

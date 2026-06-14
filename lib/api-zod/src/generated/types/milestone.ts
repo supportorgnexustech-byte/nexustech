@@ -7,8 +7,8 @@
  */
 
 export interface Milestone {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   title: string;
   /** @nullable */
   description?: string | null;

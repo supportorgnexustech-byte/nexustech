@@ -10,19 +10,25 @@ import invoicesRouter from "./invoices";
 import pricingRouter from "./pricing";
 import analyticsRouter from "./analytics";
 import notificationsRouter from "./notifications";
+import chatRouter from "./chat";
+import contactRouter from "./contact";
 
 const router: IRouter = Router();
+
+import { cacheMiddleware } from "../lib/cache";
 
 router.use(healthRouter);
 router.use(authRouter);
 router.use(usersRouter);
-router.use(clientsRouter);
-router.use(projectsRouter);
-router.use(tasksRouter);
-router.use(resourcesRouter);
-router.use(invoicesRouter);
+router.use(cacheMiddleware(10), clientsRouter);
+router.use(cacheMiddleware(10), projectsRouter);
+router.use(cacheMiddleware(10), tasksRouter);
+router.use(cacheMiddleware(10), resourcesRouter);
+router.use(cacheMiddleware(10), invoicesRouter);
+router.use(cacheMiddleware(30), analyticsRouter);
 router.use(pricingRouter);
-router.use(analyticsRouter);
 router.use(notificationsRouter);
+router.use(chatRouter);
+router.use(contactRouter);
 
 export default router;

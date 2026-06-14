@@ -1,23 +1,40 @@
-import { pgTable, text, serial, timestamp, integer, real, date } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose from "mongoose";
+import { z } from "zod";
 
-export const tasksTable = pgTable("tasks", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description"),
-  projectId: integer("project_id").notNull(),
-  assigneeId: integer("assignee_id"),
-  status: text("status").notNull().default("todo"),
-  priority: text("priority").notNull().default("medium"),
-  dueDate: date("due_date", { mode: "string" }),
-  estimatedHours: real("estimated_hours"),
-  loggedHours: real("logged_hours").default(0),
-  tags: text("tags").array().notNull().default([]),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+const TaskSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String },
+  projectId: { type: String, required: true },
+  featureId: { type: String },
+  assigneeId: { type: String },
+  status: { type: String, default: "todo" },
+  priority: { type: String, default: "medium" },
+  dueDate: { type: String },
+  estimatedHours: { type: Number },
+  loggedHours: { type: Number, default: 0 },
+  tags: { type: [String], default: [] },
+}, { timestamps: true });
+
+TaskSchema.index({ projectId: 1 });
+TaskSchema.index({ assigneeId: 1 });
+TaskSchema.index({ status: 1 });
+TaskSchema.index({ projectId: 1, status: 1 });
+
+export const TaskModel = mongoose.models.Task || mongoose.model("Task", TaskSchema);
+
+export const insertTaskSchema = z.object({
+  title: z.string(),
+  description: z.string().optional(),
+  projectId: z.union([z.string(), z.number()]),
+  featureId: z.union([z.string(), z.number()]).optional(),
+  assigneeId: z.union([z.string(), z.number()]).optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
+  dueDate: z.string().optional(),
+  estimatedHours: z.number().optional(),
+  loggedHours: z.number().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
-export const insertTaskSchema = createInsertSchema(tasksTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertTask = z.infer<typeof insertTaskSchema>;
-export type Task = typeof tasksTable.$inferSelect;
+export type TaskType = mongoose.Document & InsertTask & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };

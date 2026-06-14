@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: nexus-main
+    env: node
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm --filter @workspace/api-server start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: AI_SERVER_URL
+        value: https://nexus-ai.onrender.com
+      # MongoDB, Upstash, and other env vars should be configured in the Render Dashboard
+
+  - type: web
+    name: nexus-ai
+    env: node
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm --filter @workspace/ai-server start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AI_PORT
+        value: 5050
+      # Gemini API key and other env vars should be configured in the Render Dashboard
+
+  - type: worker
+    name: nexus-worker
+    env: node
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm --filter @workspace/notification-server start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # MongoDB, Upstash, and other env vars should be configured in the Render Dashboard

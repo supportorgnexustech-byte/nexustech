@@ -8,12 +8,12 @@
 import type { ResourceType } from './resourceType';
 
 export interface Resource {
-  id: number;
-  projectId: number;
+  id: string;
+  projectId: string;
   /** @nullable */
   projectName?: string | null;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
   type: ResourceType;
   /** @nullable */
   description?: string | null;

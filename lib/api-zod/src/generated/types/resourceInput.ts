@@ -8,7 +8,7 @@
 import type { ResourceInputType } from './resourceInputType';
 
 export interface ResourceInput {
-  projectId: number;
+  projectId: string;
   type: ResourceInputType;
   /** @nullable */
   description?: string | null;

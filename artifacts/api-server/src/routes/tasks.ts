@@ -1,6 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, tasksTable, projectsTable, usersTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { TaskModel, ProjectModel, UserModel } from "@workspace/db";
 import {
   ListTasksQueryParams,
   CreateTaskBody,
@@ -10,36 +9,36 @@ import {
   DeleteTaskParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
+import { logger } from "../lib/logger";
+import { cacheMiddleware } from "../lib/cache";
+import { invalidateCache } from "../lib/upstash";
 
 const router: IRouter = Router();
 
-async function enrichTask(task: typeof tasksTable.$inferSelect) {
-  const [project] = await db.select().from(projectsTable).where(eq(projectsTable.id, task.projectId));
+async function enrichTask(task: any) {
+  const project = await ProjectModel.findById(task.projectId).lean();
   let assigneeName: string | null = null;
   if (task.assigneeId) {
-    const [assignee] = await db.select().from(usersTable).where(eq(usersTable.id, task.assigneeId));
+    const assignee = await UserModel.findById(task.assigneeId).lean();
     assigneeName = assignee?.name ?? null;
   }
   return {
     ...task,
+    id: task._id.toString(),
     projectName: project?.name ?? null,
     assigneeName,
     dueDate: task.dueDate ?? null,
-    createdAt: task.createdAt.toISOString(),
   };
 }
 
-router.get("/tasks", requireAuth, async (req, res): Promise<void> => {
+router.get("/tasks", requireAuth, cacheMiddleware(60), async (req, res): Promise<void> => {
   const qp = ListTasksQueryParams.safeParse(req.query);
-  const conditions = [];
-  if (qp.success && qp.data.projectId) conditions.push(eq(tasksTable.projectId, qp.data.projectId));
-  if (qp.success && qp.data.assigneeId) conditions.push(eq(tasksTable.assigneeId, qp.data.assigneeId));
-  if (qp.success && qp.data.status) conditions.push(eq(tasksTable.status, qp.data.status));
+  const conditions: any = {};
+  if (qp.success && qp.data.projectId) conditions.projectId = qp.data.projectId.toString();
+  if (qp.success && qp.data.assigneeId) conditions.assigneeId = qp.data.assigneeId.toString();
+  if (qp.success && qp.data.status) conditions.status = qp.data.status;
 
-  const tasks = await db.select().from(tasksTable)
-    .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(tasksTable.createdAt);
-
+  const tasks = await TaskModel.find(conditions).sort({ createdAt: 1 }).lean();
   const enriched = await Promise.all(tasks.map(enrichTask));
   res.json(enriched);
 });
@@ -50,8 +49,54 @@ router.post("/tasks", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [task] = await db.insert(tasksTable).values(parsed.data).returning();
-  res.status(201).json(await enrichTask(task));
+  const task = await TaskModel.create(parsed.data);
+  await invalidateCache('cache:/api/tasks*');
+  res.status(201).json(await enrichTask(task.toObject()));
+});
+
+router.post("/tasks/generate", requireAuth, async (req, res): Promise<void> => {
+  const { projectId, featureId, featureTitle, projectDescription } = req.body;
+  if (!projectId || !featureId || !featureTitle || !projectDescription) {
+    res.status(400).json({ error: "Missing required fields for generation." });
+    return;
+  }
+
+  try {
+    const aiServerUrl = process.env.AI_SERVER_URL || "http://localhost:5050";
+    const response = await fetch(`${aiServerUrl}/api/tasks/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ featureTitle, projectDescription }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`AI server responded with ${response.status}`);
+    }
+
+    const aiTasks = await response.json() as any[];
+    
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 3); // Due in 3 days by default
+
+    const tasksToInsert = aiTasks.map((t: any) => ({
+      title: t.title,
+      description: t.description,
+      priority: t.priority || "medium",
+      estimatedHours: t.estimatedHours || 2,
+      projectId,
+      featureId,
+      status: "todo",
+      dueDate: dueDate.toISOString(),
+    }));
+
+    const inserted = await TaskModel.insertMany(tasksToInsert);
+    await invalidateCache('cache:/api/tasks*');
+    const enriched = await Promise.all(inserted.map(t => enrichTask(t.toObject())));
+    res.status(201).json(enriched);
+  } catch (err) {
+    logger.error({ err }, "Failed to generate tasks via ai-server");
+    res.status(502).json({ error: "AI task generation failed." });
+  }
 });
 
 router.get("/tasks/:id", requireAuth, async (req, res): Promise<void> => {
@@ -60,12 +105,16 @@ router.get("/tasks/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [task] = await db.select().from(tasksTable).where(eq(tasksTable.id, params.data.id));
-  if (!task) {
+  try {
+    const task = await TaskModel.findById(params.data.id).lean();
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+    res.json(await enrichTask(task));
+  } catch (err) {
     res.status(404).json({ error: "Task not found" });
-    return;
   }
-  res.json(await enrichTask(task));
 });
 
 router.patch("/tasks/:id", requireAuth, async (req, res): Promise<void> => {
@@ -79,12 +128,17 @@ router.patch("/tasks/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [task] = await db.update(tasksTable).set(parsed.data).where(eq(tasksTable.id, params.data.id)).returning();
-  if (!task) {
+  try {
+    const task = await TaskModel.findByIdAndUpdate(params.data.id, parsed.data, { new: true }).lean();
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+    await invalidateCache('cache:/api/tasks*');
+    res.json(await enrichTask(task));
+  } catch (err) {
     res.status(404).json({ error: "Task not found" });
-    return;
   }
-  res.json(await enrichTask(task));
 });
 
 router.delete("/tasks/:id", requireAuth, async (req, res): Promise<void> => {
@@ -93,12 +147,17 @@ router.delete("/tasks/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [task] = await db.delete(tasksTable).where(eq(tasksTable.id, params.data.id)).returning();
-  if (!task) {
+  try {
+    const task = await TaskModel.findByIdAndDelete(params.data.id).lean();
+    if (!task) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+    await invalidateCache('cache:/api/tasks*');
+    res.sendStatus(204);
+  } catch (err) {
     res.status(404).json({ error: "Task not found" });
-    return;
   }
-  res.sendStatus(204);
 });
 
 export default router;

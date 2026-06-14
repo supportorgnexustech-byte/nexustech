@@ -5,6 +5,7 @@
  * Nexus Tech Solutions Client Management Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectFeatureItem } from './projectFeatureItem';
 import type { ProjectPatchPriority } from './projectPatchPriority';
 import type { ProjectPatchStatus } from './projectPatchStatus';
 
@@ -21,5 +22,8 @@ export interface ProjectPatch {
   /** @nullable */
   spent?: number | null;
   progress?: number;
-  assignedDevIds?: number[];
+  assignedDevIds?: string[];
+  /** @nullable */
+  githubRepoUrl?: string | null;
+  featuresList?: ProjectFeatureItem[];
 }

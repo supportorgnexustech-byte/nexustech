@@ -1,16 +1,15 @@
 import { Router, type IRouter } from "express";
-import { db, invoicesTable, projectsTable, clientsTable, resourcesTable, tasksTable } from "@workspace/db";
-import { eq, gte, and } from "drizzle-orm";
+import { InvoiceModel, ProjectModel, ClientModel, ResourceModel, TaskModel } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
 router.get("/analytics/dashboard", requireAuth, async (_req, res): Promise<void> => {
   const [projects, clients, invoices, resources] = await Promise.all([
-    db.select().from(projectsTable),
-    db.select().from(clientsTable),
-    db.select().from(invoicesTable),
-    db.select().from(resourcesTable),
+    ProjectModel.find().lean(),
+    ClientModel.find().lean(),
+    InvoiceModel.find().lean(),
+    ResourceModel.find().lean(),
   ]);
 
   const activeProjects = projects.filter(p => p.status === "active").length;
@@ -31,7 +30,7 @@ router.get("/analytics/dashboard", requireAuth, async (_req, res): Promise<void>
   // Resource breakdown
   const typeMap = new Map<string, number>();
   for (const r of resources) {
-    typeMap.set(r.type, (typeMap.get(r.type) ?? 0) + r.totalCost);
+    typeMap.set(r.type as string, (typeMap.get(r.type as string) ?? 0) + r.totalCost);
   }
   const totalResourceCost = Array.from(typeMap.values()).reduce((s, v) => s + v, 0);
   const resourceBreakdown = Array.from(typeMap.entries()).map(([type, totalCost]) => ({
@@ -40,33 +39,29 @@ router.get("/analytics/dashboard", requireAuth, async (_req, res): Promise<void>
     percentage: totalResourceCost > 0 ? Math.round((totalCost / totalResourceCost) * 100) : 0,
   }));
 
-  // Recent activity (recent projects + invoices)
-  const recentActivity: Array<{ id: number; type: string; message: string; timestamp: string; entityId: number | null }> = [];
+  // Recent activity
+  const recentActivity: Array<{ id: string; type: string; message: string; timestamp: Date; entityId: string | null }> = [];
   const recentProjects = projects.slice(-3).reverse();
   for (const p of recentProjects) {
-    recentActivity.push({ id: p.id * 100, type: "project", message: `Project "${p.name}" is ${p.status}`, timestamp: p.createdAt.toISOString(), entityId: p.id });
+    recentActivity.push({ id: p._id.toString() + "p", type: "project", message: `Project "${p.name}" is ${p.status}`, timestamp: p.createdAt as Date, entityId: p._id.toString() });
   }
   const recentInvoices = invoices.slice(-3).reverse();
   for (const inv of recentInvoices) {
-    recentActivity.push({ id: inv.id * 100 + 1, type: "invoice", message: `Invoice ${inv.invoiceNumber} marked as ${inv.status}`, timestamp: inv.createdAt.toISOString(), entityId: inv.id });
+    recentActivity.push({ id: inv._id.toString() + "i", type: "invoice", message: `Invoice ${inv.invoiceNumber} marked as ${inv.status}`, timestamp: inv.createdAt as Date, entityId: inv._id.toString() });
   }
   recentActivity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   res.json({
-    totalRevenue,
-    activeProjects,
-    completedProjects,
-    totalClients,
-    totalDevHours,
+    totalRevenue, activeProjects, completedProjects, totalClients, totalDevHours,
     invoiceStats: { paid, pending, overdue, totalOutstanding },
-    recentActivity: recentActivity.slice(0, 10),
+    recentActivity: recentActivity.slice(0, 10).map(a => ({ ...a, timestamp: a.timestamp.toISOString() })),
     resourceBreakdown,
   });
 });
 
 router.get("/analytics/revenue", requireAuth, async (_req, res): Promise<void> => {
-  const invoices = await db.select().from(invoicesTable);
-  const resources = await db.select().from(resourcesTable);
+  const invoices = await InvoiceModel.find().lean();
+  const resources = await ResourceModel.find().lean();
 
   // Build last 6 months
   const months: string[] = [];
@@ -78,7 +73,7 @@ router.get("/analytics/revenue", requireAuth, async (_req, res): Promise<void> =
 
   const data = months.map(month => {
     const revenue = invoices
-      .filter(i => i.status === "paid" && i.createdAt.toISOString().startsWith(month))
+      .filter(i => i.status === "paid" && (i.createdAt as Date).toISOString().startsWith(month))
       .reduce((s, i) => s + i.total, 0);
     const expenses = resources
       .filter(r => r.date.startsWith(month))

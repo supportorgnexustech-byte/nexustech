@@ -5,15 +5,16 @@
  * Nexus Tech Solutions Client Management Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectFeatureItem } from './projectFeatureItem';
 import type { ProjectPriority } from './projectPriority';
 import type { ProjectStatus } from './projectStatus';
 
 export interface Project {
-  id: number;
+  id: string;
   name: string;
   /** @nullable */
   description?: string | null;
-  clientId: number;
+  clientId: string;
   /** @nullable */
   clientName?: string | null;
   status: ProjectStatus;
@@ -26,6 +27,9 @@ export interface Project {
   /** @nullable */
   spent?: number | null;
   progress?: number;
-  assignedDevIds?: number[];
+  assignedDevIds?: string[];
+  /** @nullable */
+  githubRepoUrl?: string | null;
+  featuresList?: ProjectFeatureItem[];
   createdAt: string;
 }

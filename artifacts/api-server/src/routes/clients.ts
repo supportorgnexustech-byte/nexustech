@@ -1,14 +1,13 @@
 import { Router, type IRouter } from "express";
-import { db, clientsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { ClientModel, ProjectModel, TaskModel, InvoiceModel, ResourceModel } from "@workspace/db";
 import { CreateClientBody, GetClientParams, UpdateClientParams, UpdateClientBody, DeleteClientParams } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
 router.get("/clients", requireAuth, async (_req, res): Promise<void> => {
-  const clients = await db.select().from(clientsTable).orderBy(clientsTable.createdAt);
-  res.json(clients.map(c => ({ ...c, createdAt: c.createdAt.toISOString() })));
+  const clients = await ClientModel.find().sort({ createdAt: 1 }).lean();
+  res.json(clients.map(c => ({ ...c, id: c._id.toString() })));
 });
 
 router.post("/clients", requireAuth, async (req, res): Promise<void> => {
@@ -17,8 +16,9 @@ router.post("/clients", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [client] = await db.insert(clientsTable).values(parsed.data).returning();
-  res.status(201).json({ ...client, createdAt: client.createdAt.toISOString() });
+  const client = await ClientModel.create(parsed.data);
+  const clientObj = client.toObject();
+  res.status(201).json({ ...clientObj, id: clientObj._id.toString() });
 });
 
 router.get("/clients/:id", requireAuth, async (req, res): Promise<void> => {
@@ -27,12 +27,16 @@ router.get("/clients/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [client] = await db.select().from(clientsTable).where(eq(clientsTable.id, params.data.id));
-  if (!client) {
+  try {
+    const client = await ClientModel.findById(params.data.id).lean();
+    if (!client) {
+      res.status(404).json({ error: "Client not found" });
+      return;
+    }
+    res.json({ ...client, id: client._id.toString() });
+  } catch (err) {
     res.status(404).json({ error: "Client not found" });
-    return;
   }
-  res.json({ ...client, createdAt: client.createdAt.toISOString() });
 });
 
 router.patch("/clients/:id", requireAuth, async (req, res): Promise<void> => {
@@ -46,12 +50,16 @@ router.patch("/clients/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [client] = await db.update(clientsTable).set(parsed.data).where(eq(clientsTable.id, params.data.id)).returning();
-  if (!client) {
+  try {
+    const client = await ClientModel.findByIdAndUpdate(params.data.id, parsed.data, { new: true }).lean();
+    if (!client) {
+      res.status(404).json({ error: "Client not found" });
+      return;
+    }
+    res.json({ ...client, id: client._id.toString() });
+  } catch (err) {
     res.status(404).json({ error: "Client not found" });
-    return;
   }
-  res.json({ ...client, createdAt: client.createdAt.toISOString() });
 });
 
 router.delete("/clients/:id", requireAuth, async (req, res): Promise<void> => {
@@ -60,12 +68,27 @@ router.delete("/clients/:id", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: params.error.message });
     return;
   }
-  const [client] = await db.delete(clientsTable).where(eq(clientsTable.id, params.data.id)).returning();
-  if (!client) {
+  try {
+    const client = await ClientModel.findByIdAndDelete(params.data.id).lean();
+    if (!client) {
+      res.status(404).json({ error: "Client not found" });
+      return;
+    }
+    // Cascade delete related entities
+    const projects = await ProjectModel.find({ clientId: params.data.id }, { _id: 1 });
+    const projectIds = projects.map(p => p._id.toString());
+    
+    if (projectIds.length > 0) {
+      await TaskModel.deleteMany({ projectId: { $in: projectIds } });
+    }
+    await ProjectModel.deleteMany({ clientId: params.data.id });
+    await InvoiceModel.deleteMany({ clientId: params.data.id });
+    await ResourceModel.deleteMany({ clientId: params.data.id });
+
+    res.sendStatus(204);
+  } catch (err) {
     res.status(404).json({ error: "Client not found" });
-    return;
   }
-  res.sendStatus(204);
 });
 
 export default router;

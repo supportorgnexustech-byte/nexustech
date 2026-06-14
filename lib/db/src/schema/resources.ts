@@ -1,21 +1,32 @@
-import { pgTable, text, serial, timestamp, integer, real, date } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import mongoose from "mongoose";
+import { z } from "zod";
 
-export const resourcesTable = pgTable("resources", {
-  id: serial("id").primaryKey(),
-  projectId: integer("project_id").notNull(),
-  type: text("type").notNull().default("dev_hours"),
-  description: text("description"),
-  quantity: real("quantity").notNull(),
-  unit: text("unit").notNull(),
-  costPerUnit: real("cost_per_unit").notNull(),
-  totalCost: real("total_cost").notNull(),
-  date: date("date", { mode: "string" }).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+const ResourceSchema = new mongoose.Schema({
+  projectId: { type: String, required: true },
+  type: { type: String, default: "dev_hours" },
+  description: { type: String },
+  quantity: { type: Number, required: true },
+  unit: { type: String, required: true },
+  costPerUnit: { type: Number, required: true },
+  totalCost: { type: Number, required: true },
+  date: { type: String, required: true },
+}, { timestamps: true });
+
+ResourceSchema.index({ projectId: 1 });
+ResourceSchema.index({ type: 1 });
+
+export const ResourceModel = mongoose.models.Resource || mongoose.model("Resource", ResourceSchema);
+
+export const insertResourceSchema = z.object({
+  projectId: z.union([z.string(), z.number()]),
+  type: z.string().optional(),
+  description: z.string().optional(),
+  quantity: z.number(),
+  unit: z.string(),
+  costPerUnit: z.number(),
+  totalCost: z.number(),
+  date: z.string(),
 });
 
-export const insertResourceSchema = createInsertSchema(resourcesTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertResource = z.infer<typeof insertResourceSchema>;
-export type Resource = typeof resourcesTable.$inferSelect;
+export type ResourceType = mongoose.Document & InsertResource & { _id: mongoose.Types.ObjectId, createdAt: Date, updatedAt: Date };

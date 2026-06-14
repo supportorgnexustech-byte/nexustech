@@ -13,7 +13,7 @@ export interface UserInput {
   password: string;
   role: UserInputRole;
   /** @nullable */
-  clientId?: number | null;
+  clientId?: string | null;
   /** @nullable */
   phone?: string | null;
 }

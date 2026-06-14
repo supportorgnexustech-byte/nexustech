@@ -67,6 +67,78 @@
 }
 
 :root {
+  --button-outline: rgba(140, 107, 93, 0.15);
+  --badge-outline: rgba(140, 107, 93, 0.1);
+
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(44, 36, 32, 0.02);
+  --elevate-2: rgba(44, 36, 32, 0.05);
+
+  /* Cream Background */
+  --background: 40 33% 98%;
+  --foreground: 20 18% 15%;
+
+  /* Soft Border */
+  --border: 40 30% 87%;
+  
+  /* Cards using slightly darker cream */
+  --card: 43 33% 95%;
+  --card-foreground: 20 18% 15%;
+  --card-border: 40 30% 87%;
+
+  --sidebar: 43 33% 95%;
+  --sidebar-foreground: 20 18% 15%;
+  --sidebar-border: 40 30% 87%;
+  --sidebar-primary: 18 20% 46%;
+  --sidebar-primary-foreground: 40 33% 98%;
+  --sidebar-accent: 40 33% 90%;
+  --sidebar-accent-foreground: 20 18% 15%;
+  --sidebar-ring: 18 20% 46%;
+
+  --popover: 43 33% 95%;
+  --popover-foreground: 20 18% 15%;
+  --popover-border: 40 30% 87%;
+
+  /* Warm Brown */
+  --primary: 18 20% 46%;
+  --primary-foreground: 40 33% 98%;
+
+  --secondary: 40 33% 90%;
+  --secondary-foreground: 20 18% 15%;
+
+  --muted: 40 33% 90%;
+  --muted-foreground: 21 8% 42%;
+
+  --accent: 26 18% 84%;
+  --accent-foreground: 20 18% 15%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 40 33% 98%;
+
+  --input: 40 30% 87%;
+  --ring: 18 20% 46%;
+
+  --chart-1: 18 20% 46%;
+  --chart-2: 38 92% 50%;
+  --chart-3: 142 41% 45%;
+  --chart-4: 26 38% 60%;
+  --chart-5: 340 45% 55%;
+
+  --app-font-sans: 'Outfit', sans-serif;
+  --app-font-serif: 'Playfair Display', serif;
+  --app-font-mono: Menlo, monospace;
+  --radius: .75rem;
+  
+  --sidebar-primary-border: hsl(var(--sidebar-primary));
+  --sidebar-accent-border: hsl(var(--sidebar-accent));
+  --primary-border: hsl(var(--primary));
+  --secondary-border: hsl(var(--secondary));
+  --muted-border: hsl(var(--muted));
+  --accent-border: hsl(var(--accent));
+  --destructive-border: hsl(var(--destructive));
+}
+
+.dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
 
@@ -74,14 +146,14 @@
   --elevate-1: rgba(255,255,255, .03);
   --elevate-2: rgba(255,255,255, .08);
 
-  /* Deep Navy background #0f1729 */
+  /* Deep Navy background */
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
 
   /* Slightly lighter slate for borders */
   --border: 217 33% 17%;
   
-  /* Cards using a slate tone #1e293b */
+  /* Cards using a slate tone */
   --card: 217 33% 17%;
   --card-foreground: 210 40% 98%;
   --card-border: 217 33% 25%;
@@ -99,7 +171,7 @@
   --popover-foreground: 210 40% 98%;
   --popover-border: 217 33% 17%;
 
-  /* Electric blue #3b82f6 */
+  /* Electric blue */
   --primary: 217 91% 60%;
   --primary-foreground: 210 40% 98%;
 
@@ -112,7 +184,6 @@
   --accent: 217 33% 17%;
   --accent-foreground: 210 40% 98%;
 
-  /* Warm amber for alerts / destructive if needed, or keeping red for destructive */
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
 
@@ -124,23 +195,6 @@
   --chart-3: 142 71% 45%;
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
-
-  --app-font-sans: 'Inter', sans-serif;
-  --app-font-serif: Georgia, serif;
-  --app-font-mono: Menlo, monospace;
-  --radius: .5rem;
-  
-  --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
-  --primary-border: hsl(var(--primary));
-  --secondary-border: hsl(var(--secondary));
-  --muted-border: hsl(var(--muted));
-  --accent-border: hsl(var(--accent));
-  --destructive-border: hsl(var(--destructive));
-}
-
-.dark {
-  /* same as above as default is already dark */
 }
 
 @layer base {

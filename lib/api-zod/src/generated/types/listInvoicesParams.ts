@@ -7,6 +7,6 @@
  */
 
 export type ListInvoicesParams = {
-clientId?: number;
+clientId?: string;
 status?: string;
 };

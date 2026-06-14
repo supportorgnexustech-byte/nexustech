@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "@/contexts/AuthContext";
+// Auth removed
 import { useGetClient, useListProjects, useListInvoices } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Briefcase, FileText, IndianRupee, CheckCircle2 } from "lucide-react";
@@ -18,17 +18,17 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function ClientPortal() {
-  const { currentUser } = useAuth();
-  const clientId = currentUser?.clientId;
+  const currentUser = { name: "Admin", clientId: "1" };
+  const clientId = currentUser.clientId;
 
   const { data: client, isLoading: clientLoading } = useGetClient(clientId!, {
-    query: { enabled: !!clientId },
+    query: { enabled: !!clientId, queryKey: ["client", clientId] },
   });
-  const { data: allProjects, isLoading: projectsLoading } = useListProjects({
-    query: { enabled: !!clientId },
+  const { data: allProjects, isLoading: projectsLoading } = useListProjects(undefined, {
+    query: { enabled: !!clientId, queryKey: ["projects", clientId] },
   });
-  const { data: allInvoices, isLoading: invoicesLoading } = useListInvoices({
-    query: { enabled: !!clientId },
+  const { data: allInvoices, isLoading: invoicesLoading } = useListInvoices(undefined, {
+    query: { enabled: !!clientId, queryKey: ["invoices", clientId] },
   });
 
   if (clientLoading || projectsLoading || invoicesLoading) {
