@@ -21,6 +21,8 @@
     "@types/node": "^22.9.0",
     "esbuild": "0.27.3",
     "esbuild-plugin-pino": "^2.3.3",
+    "pino-abstract-transport": "^3.0.0",
+    "thread-stream": "3.1.0",
     "tsx": "^4.19.2",
     "typescript": "~5.9.3"
   }
